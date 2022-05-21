@@ -1,2 +1,2 @@
 # adsd-spc-pr
-Exam project for "Programming" university course @ UniCampus Rome - Developed by Paolo Ruggirello & Simone Pio Caronia. 
+Exam project for "Architetture dei Sistemi Distribuiti" university course @ UniCampus Rome - Developed by Paolo Ruggirello & Simone Pio Caronia. 
