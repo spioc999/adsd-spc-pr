@@ -2,6 +2,7 @@ FATHER = "father"
 SONS = "sons"
 NODE_IP = "node_ip"
 NODE_PORT = "node_port"
+TREE_BRANCH_SIZE = 2 #Binary tree
 
 
 def getRegisterNodeInfo(json):
