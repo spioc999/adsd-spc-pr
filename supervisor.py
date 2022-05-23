@@ -2,11 +2,15 @@ from flask import Flask, request, jsonify
 from SupervisorUtils import *
 from Status import Status
 from time import time
+import socket
+from threading import Thread
 
+FLASK_PORT = 10000
+TCP_SERVER_PORT = 10001
 app = Flask(__name__)
-
+TCPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
 tree = dict()
-
+rootConnection = False
 
 @app.route("/tree", methods=['GET'])
 def getTree():
@@ -19,12 +23,9 @@ def registerNode():
         node_ip, node_port = getRegisterNodeInfo(request.json)
         node_id = f'{node_ip}:{node_port}'
         father_id = None
-        if len(tree) == 0:
-            tree[node_id] = {
-                FATHER: None,
-                SONS: dict()
-            }
-            return '', 200
+        if not rootConnection:
+            #sent supervisor tcp server socket to root
+            father_id = f'{get_host_address()}:{TCP_SERVER_PORT}'
         else:
             for node in tree:
                 if len(tree[node][SONS]) < TREE_BRANCH_SIZE:
@@ -72,5 +73,32 @@ def confirmNode():
         return exc.args[0], exc.args[1]
 
 
+def root_connection_manager(port):
+    global rootConnection
+    global TCPServerSocket
+    TCPServerSocket.bind(('0.0.0.0', port))
+    while True:
+        print('waiting for new root...')
+        TCPServerSocket.listen() 
+        conn, addr = TCPServerSocket.accept()
+        rootConnection = True
+        tree[f'{addr[0]}:{addr[1]}'] = {
+            FATHER: f'{get_host_address()}:{TCP_SERVER_PORT}',
+            SONS: dict()
+        }
+        print(f'root connected!: {addr}')
+        while True:
+            data = conn.recv(1024)
+            if not data:
+                print(f'root connection closed!')
+                rootConnection = False
+                break
+            else:
+                print(data)
+
+
 if __name__ == '__main__':
-    app.run(port=10000)
+    Thread(target=root_connection_manager, args=(TCP_SERVER_PORT,)).start()
+    app.run(port=FLASK_PORT, host='0.0.0.0')
+
+#TODO confirm each node when it sends to father the port in which TCP server is available
