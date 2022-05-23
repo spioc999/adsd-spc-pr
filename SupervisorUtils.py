@@ -2,6 +2,8 @@ FATHER = "father"
 SONS = "sons"
 NODE_IP = "node_ip"
 NODE_PORT = "node_port"
+STATUS = "status"
+TIME = "time"
 TREE_BRANCH_SIZE = 2 #Binary tree
 
 

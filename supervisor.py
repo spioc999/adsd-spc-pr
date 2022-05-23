@@ -1,8 +1,7 @@
-import json
-
 from flask import Flask, request, jsonify
 from SupervisorUtils import *
-from Node import Node
+from Status import Status
+from time import time
 
 app = Flask(__name__)
 
@@ -11,13 +10,7 @@ tree = dict()
 
 @app.route("/tree", methods=['GET'])
 def getTree():
-    outputTree = tree.copy()
-    for node in outputTree:
-        sonArray = []
-        for son in outputTree[node][SONS]:
-            sonArray.append(son.toJSON())
-        outputTree[node][SONS] = sonArray
-    return jsonify(outputTree)
+    return jsonify(tree)
 
 
 @app.route("/node/register", methods=['POST'])
@@ -28,14 +21,16 @@ def registerNode():
     if len(tree) == 0:
         tree[node_id] = {
             FATHER: None,
-            SONS: []
+            SONS: dict()
         }
         return '', 200
     else:
         for node in tree:
             if len(tree[node][SONS]) < TREE_BRANCH_SIZE:
                 father_id = node
-                tree[node][SONS].append(Node(node_ip, node_port))
+                tree[node][SONS][node_id] = dict()
+                tree[node][SONS][node_id][STATUS] = Status.PENDING
+                tree[node][SONS][node_id][TIME] = time()
     return father_id, 200
 
 
