@@ -1,6 +1,4 @@
 from flask import Flask, request, jsonify
-import numpy as np
-from Constants import *
 from SupervisorUtils import *
 
 app = Flask(__name__)
