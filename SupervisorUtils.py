@@ -16,7 +16,6 @@ host_address = None
 def getRegisterNodeInfo(json):
     if json and all(key in json.keys() for key in [NODE_IP, NODE_PORT]):
         return json[NODE_IP], json[NODE_PORT]
-    
     raise Exception('Bad request', 400)
 
 
@@ -60,11 +59,11 @@ def remove_father(node):
 
 def search_father_and_add_as_son(tree, node_id, father_to_exclude=None, unlimited_branch_size=False):
     for node in tree:
-        if node != father_to_exclude and node != node_id and (unlimited_branch_size or len(tree[node][SONS]) < TREE_BRANCH_SIZE) and not tree[node][IS_FULL]:
+        if node != father_to_exclude and node != node_id and (unlimited_branch_size or len(tree[node][SONS]) < TREE_BRANCH_SIZE) and not tree[node][IS_FULL] and tree[node][FATHER]:
             father_id = node
             add_son(tree[node], node_id, unlimited_branch_size)
             return father_id
-    return search_father_and_add_as_son(tree, node_id, unlimited_branch_size=True) # If not available father extend branch size
+    return search_father_and_add_as_son(tree, node_id, unlimited_branch_size=True)  # If not available father extend branch size
 
 
 def remove_sons_if_needed(node):
@@ -83,12 +82,14 @@ def remove_sons_if_needed(node):
         print(f"Dropping exceeded sons for node")
 
 
-def add_node(tree, node_id, father_id):
-    tree[node_id] = {
-        FATHER: father_id,
-        SONS: dict(),
-        IS_FULL: False
-    }
+def create_node(node_id, father_id):
+    return {
+            node_id: {
+                FATHER: father_id,
+                SONS: dict(),
+                IS_FULL: False
+            }
+        }
 
 
 def remove_node(tree, node_id):

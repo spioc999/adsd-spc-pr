@@ -8,7 +8,9 @@ from datetime import datetime
 FLASK_PORT = 10000
 TCP_SERVER_PORT = 10001
 app = Flask(__name__)
+app.config['JSON_SORT_KEYS'] = False
 TCPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
+
 tree = dict()
 rootConnection = False
 
@@ -29,7 +31,8 @@ def registerNode():
             # get father id
             current_father_id = tree[node_id][FATHER]
             # remove son from father
-            remove_son(tree[current_father_id], node_id)
+            if current_father_id:
+                remove_son(tree[current_father_id], node_id)
             # search new father
             father_id = search_father_and_add_as_son(tree, node_id, current_father_id)
         else:
@@ -60,7 +63,8 @@ def confirmNode():
 
         son_dict_item[STATUS] = Status.CONFIRMED
         son_dict_item[TIME] = datetime.now()
-        add_node(tree, son_node_id, father_node_id)
+        new_node = create_node(son_node_id, father_node_id)
+        tree.update(new_node)
         remove_sons_if_needed(father_node)
         return 'Success', 200
     except Exception as exc:
@@ -73,6 +77,7 @@ def confirmNode():
 def root_connection_manager(port):
     global rootConnection
     global TCPServerSocket
+    global tree
     TCPServerSocket.bind(('0.0.0.0', port))
     while True:
         print('waiting for new root...')
@@ -80,7 +85,11 @@ def root_connection_manager(port):
         conn, addr = TCPServerSocket.accept()
         rootConnection = True
         root_id = f'{addr[0]}:{addr[1]}'
-        add_node(tree, root_id, f'{get_host_address()}:{TCP_SERVER_PORT}')
+        root_node = create_node(root_id, f'{get_host_address()}:{TCP_SERVER_PORT}')
+        temp_tree = root_node
+        if len(tree) > 0:
+            temp_tree.update(tree)
+        tree = temp_tree
         print(f'root connected!: {addr}')
         while True:
             data = conn.recv(1024)
