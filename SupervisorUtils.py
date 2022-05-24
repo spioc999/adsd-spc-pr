@@ -58,13 +58,13 @@ def remove_father(node):
     node[FATHER] = None
 
 
-def search_father_and_add_son(tree, node_id, father_to_exclude=None, unlimited_branch_size=False):
+def search_father_and_add_as_son(tree, node_id, father_to_exclude=None, unlimited_branch_size=False):
     for node in tree:
         if node != father_to_exclude and node != node_id and (unlimited_branch_size or len(tree[node][SONS]) < TREE_BRANCH_SIZE) and not tree[node][IS_FULL]:
             father_id = node
             add_son(tree[node], node_id, unlimited_branch_size)
             return father_id
-    return search_father_and_add_son(tree, node_id, unlimited_branch_size=True) # If not available father extend branch size
+    return search_father_and_add_as_son(tree, node_id, unlimited_branch_size=True) # If not available father extend branch size
 
 
 def remove_sons_if_needed(node):

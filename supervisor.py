@@ -22,7 +22,7 @@ def registerNode():
     try:
         node_ip, node_port = getRegisterNodeInfo(request.json)
         node_id = f'{node_ip}:{node_port}'
-        if not rootConnection:
+        if not rootConnection:  # No root tree is present
             #sent supervisor tcp server socket to root
             father_id = f'{get_host_address()}:{TCP_SERVER_PORT}'
         elif node_id in tree:
@@ -31,9 +31,9 @@ def registerNode():
             # remove son from father
             remove_son(tree[current_father_id], node_id)
             # search new father
-            father_id = search_father_and_add_son(tree, node_id, current_father_id)
+            father_id = search_father_and_add_as_son(tree, node_id, current_father_id)
         else:
-            father_id = search_father_and_add_son(tree, node_id)
+            father_id = search_father_and_add_as_son(tree, node_id)
         return father_id, 200
     except Exception as exc:
         if not exc.args or len(exc.args) < 2:
