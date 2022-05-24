@@ -1,9 +1,9 @@
 from flask import Flask, request, jsonify
 from SupervisorUtils import *
 from Status import Status
-from time import time
 import socket
 from threading import Thread
+from datetime import datetime
 
 FLASK_PORT = 10000
 TCP_SERVER_PORT = 10001
@@ -22,18 +22,18 @@ def registerNode():
     try:
         node_ip, node_port = getRegisterNodeInfo(request.json)
         node_id = f'{node_ip}:{node_port}'
-        father_id = None
         if not rootConnection:
             #sent supervisor tcp server socket to root
             father_id = f'{get_host_address()}:{TCP_SERVER_PORT}'
+        elif node_id in tree:
+            # get father id
+            current_father_id = tree[node_id][FATHER]
+            # remove son from father
+            remove_son(tree[current_father_id], node_id)
+            # search new father
+            father_id = search_father_and_add_son(tree, node_id, current_father_id)
         else:
-            for node in tree:
-                if len(tree[node][SONS]) < TREE_BRANCH_SIZE:
-                    father_id = node
-                    tree[node][SONS][node_id] = dict()
-                    tree[node][SONS][node_id][STATUS] = Status.PENDING
-                    tree[node][SONS][node_id][TIME] = time()
-                    break
+            father_id = search_father_and_add_son(tree, node_id)
         return father_id, 200
     except Exception as exc:
         if not exc.args or len(exc.args) < 2:
@@ -59,12 +59,13 @@ def confirmNode():
             return 'Already confirmed', 200
 
         son_dict_item[STATUS] = Status.CONFIRMED
-        son_dict_item[TIME] = time()
+        son_dict_item[TIME] = datetime.now()
         tree[son_node_id] = {
             FATHER: father_node_id,
-            SONS: dict()
+            SONS: dict(),
+            IS_FULL: False
         }
-
+        remove_sons_if_needed(father_node)
         return 'Success', 200
     except Exception as exc:
         if not exc.args or len(exc.args) < 2:
@@ -82,15 +83,20 @@ def root_connection_manager(port):
         TCPServerSocket.listen() 
         conn, addr = TCPServerSocket.accept()
         rootConnection = True
-        tree[f'{addr[0]}:{addr[1]}'] = {
+        root_id = f'{addr[0]}:{addr[1]}'
+        tree[root_id] = {
             FATHER: f'{get_host_address()}:{TCP_SERVER_PORT}',
-            SONS: dict()
+            SONS: dict(),
+            IS_FULL: False
         }
         print(f'root connected!: {addr}')
         while True:
             data = conn.recv(1024)
             if not data:
                 print(f'root connection closed!')
+                for son in tree[root_id][SONS]:
+                    remove_father(tree[son])
+                del tree[root_id]
                 rootConnection = False
                 break
             else:
