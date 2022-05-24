@@ -49,6 +49,8 @@ def add_son(node, son_id, unlimited_branch_size=False):
 
 
 def remove_son(node, son_id):
+    if node[IS_FULL]:
+        node[IS_FULL] = False
     del node[SONS][son_id]
 
 
@@ -80,3 +82,14 @@ def remove_sons_if_needed(node):
         node[IS_FULL] = True
         print(f"Dropping exceeded sons for node")
 
+
+def add_node(tree, node_id, father_id):
+    tree[node_id] = {
+        FATHER: father_id,
+        SONS: dict(),
+        IS_FULL: False
+    }
+
+
+def remove_node(tree, node_id):
+    del tree[node_id]

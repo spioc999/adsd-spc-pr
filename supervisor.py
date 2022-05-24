@@ -60,11 +60,7 @@ def confirmNode():
 
         son_dict_item[STATUS] = Status.CONFIRMED
         son_dict_item[TIME] = datetime.now()
-        tree[son_node_id] = {
-            FATHER: father_node_id,
-            SONS: dict(),
-            IS_FULL: False
-        }
+        add_node(tree, son_node_id, father_node_id)
         remove_sons_if_needed(father_node)
         return 'Success', 200
     except Exception as exc:
@@ -84,11 +80,7 @@ def root_connection_manager(port):
         conn, addr = TCPServerSocket.accept()
         rootConnection = True
         root_id = f'{addr[0]}:{addr[1]}'
-        tree[root_id] = {
-            FATHER: f'{get_host_address()}:{TCP_SERVER_PORT}',
-            SONS: dict(),
-            IS_FULL: False
-        }
+        add_node(tree, root_id, f'{get_host_address()}:{TCP_SERVER_PORT}')
         print(f'root connected!: {addr}')
         while True:
             data = conn.recv(1024)
@@ -96,7 +88,7 @@ def root_connection_manager(port):
                 print(f'root connection closed!')
                 for son in tree[root_id][SONS]:
                     remove_father(tree[son])
-                del tree[root_id]
+                remove_node(tree, root_id)
                 rootConnection = False
                 break
             else:
