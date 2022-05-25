@@ -13,7 +13,7 @@ TREE_BRANCH_SIZE = 2 #Binary tree
 SON = "son"
 IS_FULL = "is_full"
 host_address = None
-regex_root_command = r"^\[PORT\] ([1-9]{1})([0-9]{3,})"
+regex_root_command = r"^\[PORT\]( {0,})([1-9]{1})([0-9]{3,})"
 
 def getRegisterNodeInfo(json):
     if json and all(key in json.keys() for key in [NODE_IP, NODE_PORT]):
