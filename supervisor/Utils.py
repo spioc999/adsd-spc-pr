@@ -4,7 +4,6 @@ FLASK_PORT = 10000
 TCP_SERVER_PORT = 10001
 
 
-
 def initialize_parser():
     """Utility method that initializes argparse and return the args
         @rtype: Namespace object

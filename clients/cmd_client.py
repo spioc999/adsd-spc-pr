@@ -1,5 +1,6 @@
 from cmd import Cmd
 import socket
+from threading import Thread
 
 class myPrompt(Cmd):
     prompt = '>'
@@ -10,6 +11,17 @@ class myPrompt(Cmd):
         self.socket = None
         self.is_connect = False
 
+    def receive_messages(self, socket):
+        while True:
+            print("Waiting for messages")
+            data = socket.recv(1024)
+            if not data:
+                print("disconnected")
+                self.do_disconnect(None)
+            else:
+                print(f"[SUPERVISOR] {data.decode()}")
+
+
     def do_exit(self, inp):
         print('See you next time!')
         self.close()
@@ -17,13 +29,17 @@ class myPrompt(Cmd):
     
     def do_connect(self, inp):
         if not self.is_connect:
-            args = inp.split(' ')
-            address = args[0]
-            port    = int(args[1])
-            self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
-            self.socket.connect((address, port))
-            self.is_connect = True
-            print(self.socket)
+            try:
+                args = inp.split(' ')
+                address = args[0]
+                port = int(args[1])
+                self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
+                self.socket.connect((address, port))
+                self.is_connect = True
+                Thread(target=self.receive_messages, args=(self.socket,)).start()
+                print(self.socket)
+            except:
+                print("Error during connection... try again")
 
     def do_disconnect(self, inp):
         if self.is_connect:

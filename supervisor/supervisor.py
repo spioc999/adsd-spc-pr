@@ -13,6 +13,7 @@ TCPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
 tree = dict()
 rootConnection = False
 
+
 @app.route("/tree", methods=['GET'])
 def getTree():
     return jsonify(tree)
@@ -24,7 +25,7 @@ def registerNode():
         node_ip, node_port = getRegisterNodeInfo(request.json)
         node_id = f'{node_ip}:{node_port}'
         if not rootConnection:  # No root tree is present
-            #sent supervisor tcp server socket to root
+            # sent supervisor tcp server socket to root
             father_id = f'{get_host_address()}:{TCP_SERVER_PORT}'
         elif node_id in tree:
             # get father id
@@ -40,7 +41,7 @@ def registerNode():
     except Exception as exc:
         if not exc.args or len(exc.args) < 2:
             return 'Error', 500
-        
+
         return exc.args[0], exc.args[1]
 
 
@@ -52,11 +53,11 @@ def confirmNode():
         son_node_id = f'{son_node_ip}:{son_node_port}'
         father_node = tree[father_node_id]
         if father_node is None:
-            raise Exception('Father to register', 404) #TODO say to father to connect
-        
+            raise Exception('Father to register', 404)  # TODO say to father to connect
+
         son_dict_item = father_node[SONS][son_node_id]
         if son_dict_item is None:
-            raise Exception('Son not found', 404) #TODO father must refuse son connection
+            raise Exception('Son not found', 404)  # TODO father must refuse son connection
         elif son_dict_item[STATUS] == Status.CONFIRMED:
             return 'Already confirmed', 200
 
@@ -69,7 +70,7 @@ def confirmNode():
     except Exception as exc:
         if not exc.args or len(exc.args) < 2:
             return 'Error', 500
-        
+
         return exc.args[0], exc.args[1]
 
 
@@ -81,26 +82,31 @@ def root_connection_manager(port):
     print(f"Supervisor socket listening on port: {port}")
     while True:
         print('waiting for new root...')
-        TCPServerSocket.listen() 
+        TCPServerSocket.listen()
         conn, addr = TCPServerSocket.accept()
         while not rootConnection:
+            print("Waiting root node port")
             data = conn.recv(1024)
             if not data:
                 print(f'root connection closed before confirmed!')
                 break
             try:
                 port = decode_root_port_command(data.decode('utf-8'))
+                if port < 49152 or port > 65535:
+                    conn.sendall("[RESULT] CHANGE_PORT".encode())
+                    print(f"Port {port} is out of range.")
+                    continue
                 rootConnection = True
                 root_id = f'{addr[0]}:{port}'
-                root_node = create_node(root_id, f'{get_host_address()}:{TCP_SERVER_PORT}')
-                temp_tree = root_node
+                temp_tree = create_node(root_id, f'{get_host_address()}:{TCP_SERVER_PORT}')
                 if len(tree) > 0:
                     temp_tree.update(tree)
                 tree = temp_tree
-                print(f'root connected!: {addr}')
+                conn.sendall("[RESULT] OK".encode())
+                print(f'root connected!: {addr}. Root id: {root_id}')
             except:
                 print(f'Not valid port command from {addr}: {data}')
-        
+
         while rootConnection:
             data = conn.recv(1024)
             if not data:
@@ -118,4 +124,4 @@ if __name__ == '__main__':
     Thread(target=root_connection_manager, args=(args.socket_port,)).start()
     app.run(port=args.flask_port, host='0.0.0.0')
 
-#TODO confirm each node when it sends to father the port in which TCP server is available
+# TODO confirm each node when it sends to father the port in which TCP server is available
