@@ -101,5 +101,5 @@ def remove_node(tree, node_id):
 def decode_root_port_command(command):
     pattern = re.compile(regex_root_command)
     if pattern.match(command):
-        return int(command.split()[1])
+        return int(command.split(']')[1])
     raise ValueError("Command doesn't match the regex!")
