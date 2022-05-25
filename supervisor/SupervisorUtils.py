@@ -1,6 +1,8 @@
 from netifaces import interfaces, ifaddresses, AF_INET
 from datetime import datetime
 from Status import Status
+import re
+
 FATHER = "father"
 SONS = "sons"
 NODE_IP = "node_ip"
@@ -11,7 +13,7 @@ TREE_BRANCH_SIZE = 2 #Binary tree
 SON = "son"
 IS_FULL = "is_full"
 host_address = None
-
+regex_root_command = r"^\[PORT\] ([1-9]{1})([0-9]{3,})"
 
 def getRegisterNodeInfo(json):
     if json and all(key in json.keys() for key in [NODE_IP, NODE_PORT]):
@@ -94,3 +96,10 @@ def create_node(node_id, father_id):
 
 def remove_node(tree, node_id):
     del tree[node_id]
+
+
+def decode_root_port_command(command):
+    pattern = re.compile(regex_root_command)
+    if pattern.match(command):
+        return int(command.split()[1])
+    raise ValueError("Command doesn't match the regex!")

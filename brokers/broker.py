@@ -199,7 +199,7 @@ if __name__ == '__main__':
     mutexTOPICs = Lock()
     global topics 
     topics = dict()
-    curr_id = -1;
+    curr_id = -1
 
     TCPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
     TCPServerSocket.bind((localIP, localPORT))
@@ -225,5 +225,5 @@ if __name__ == '__main__':
             Thread(target=connection_manager_thread, args=(curr_id, conn),).start()  #
 
     finally:
-        if TCPSeverSocket:
+        if TCPServerSocket:
             TCPServerSocket.close()

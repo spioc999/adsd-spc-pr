@@ -83,15 +83,25 @@ def root_connection_manager(port):
         print('waiting for new root...')
         TCPServerSocket.listen() 
         conn, addr = TCPServerSocket.accept()
-        rootConnection = True
-        root_id = f'{addr[0]}:{addr[1]}'
-        root_node = create_node(root_id, f'{get_host_address()}:{TCP_SERVER_PORT}')
-        temp_tree = root_node
-        if len(tree) > 0:
-            temp_tree.update(tree)
-        tree = temp_tree
-        print(f'root connected!: {addr}')
-        while True:
+        while not rootConnection:
+            data = conn.recv(1024)
+            if not data:
+                print(f'root connection closed before confirmed!')
+                break
+            try:
+                port = decode_root_port_command(data.decode('utf-8'))
+                rootConnection = True
+                root_id = f'{addr[0]}:{port}'
+                root_node = create_node(root_id, f'{get_host_address()}:{TCP_SERVER_PORT}')
+                temp_tree = root_node
+                if len(tree) > 0:
+                    temp_tree.update(tree)
+                tree = temp_tree
+                print(f'root connected!: {addr}')
+            except:
+                print(f'Not valid port command from {addr}: {data}')
+        
+        while rootConnection:
             data = conn.recv(1024)
             if not data:
                 print(f'root connection closed!')
@@ -99,7 +109,6 @@ def root_connection_manager(port):
                     remove_father(tree[son])
                 remove_node(tree, root_id)
                 rootConnection = False
-                break
             else:
                 print(data)
 
