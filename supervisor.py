@@ -4,9 +4,8 @@ from Status import Status
 import socket
 from threading import Thread
 from datetime import datetime
+from Utils import *
 
-FLASK_PORT = 10000
-TCP_SERVER_PORT = 10001
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 TCPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
@@ -79,6 +78,7 @@ def root_connection_manager(port):
     global TCPServerSocket
     global tree
     TCPServerSocket.bind(('0.0.0.0', port))
+    print(f"Supervisor socket listening on port: {port}")
     while True:
         print('waiting for new root...')
         TCPServerSocket.listen() 
@@ -105,7 +105,8 @@ def root_connection_manager(port):
 
 
 if __name__ == '__main__':
-    Thread(target=root_connection_manager, args=(TCP_SERVER_PORT,)).start()
-    app.run(port=FLASK_PORT, host='0.0.0.0')
+    args = initialize_parser()
+    Thread(target=root_connection_manager, args=(args.socket_port,)).start()
+    app.run(port=args.flask_port, host='0.0.0.0')
 
 #TODO confirm each node when it sends to father the port in which TCP server is available
