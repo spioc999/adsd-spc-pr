@@ -1,32 +1,29 @@
 from flask import Flask, request, jsonify
-from SupervisorUtils import *
-from Status import Status
 import socket
 from threading import Thread
-from datetime import datetime
-from Utils import *
+from utils.common_utils import *
+from utils.supervisor_utils import *
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 TCPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
-
 tree = dict()
 rootConnection = False
 
 
 @app.route("/tree", methods=['GET'])
-def getTree():
+def get_tree():
     return jsonify(tree)
 
 
 @app.route("/node/register", methods=['POST'])
-def registerNode():
+def register_node():
     try:
         node_ip, node_port = getRegisterNodeInfo(request.json)
         node_id = f'{node_ip}:{node_port}'
         if not rootConnection:  # No root tree is present
-            # sent supervisor tcp server socket to root
-            father_id = f'{get_host_address()}:{TCP_SERVER_PORT}'
+            # sent enums tcp server socket to root
+            father_id = f'{get_host_address()}:{tcp_server_port}'
         elif node_id in tree:
             # get father id
             current_father_id = tree[node_id][FATHER]
@@ -46,7 +43,7 @@ def registerNode():
 
 
 @app.route("/node/confirm", methods=['POST'])
-def confirmNode():
+def confirm_node():
     try:
         father_node_ip, father_node_port, son_node_ip, son_node_port = getConfirmNodeInfo(request.json)
         father_node_id = f'{father_node_ip}:{father_node_port}'
@@ -80,10 +77,11 @@ def root_connection_manager(port):
     global tree
     TCPServerSocket.bind(('0.0.0.0', port))
     print(f"Supervisor socket listening on port: {port}")
+    root_id = None
     while True:
         print('waiting for new root...')
         TCPServerSocket.listen()
-        conn, addr = TCPServerSocket.accept()
+        conn, address = TCPServerSocket.accept()
         while not rootConnection:
             print("Waiting root node port")
             data = conn.recv(1024)
@@ -97,15 +95,15 @@ def root_connection_manager(port):
                     print(f"Port {port} is out of range.")
                     continue
                 rootConnection = True
-                root_id = f'{addr[0]}:{port}'
-                temp_tree = create_node(root_id, f'{get_host_address()}:{TCP_SERVER_PORT}')
+                root_id = f'{address[0]}:{port}'
+                temp_tree = create_node(root_id, f'{get_host_address()}:{port}')
                 if len(tree) > 0:
                     temp_tree.update(tree)
                 tree = temp_tree
                 conn.sendall("[RESULT] OK".encode())
-                print(f'root connected!: {addr}. Root id: {root_id}')
+                print(f'root connected!: {address}. Root id: {root_id}')
             except:
-                print(f'Not valid port command from {addr}: {data}')
+                print(f'Not valid port command from {address}: {data}')
 
         while rootConnection:
             data = conn.recv(1024)
@@ -120,8 +118,9 @@ def root_connection_manager(port):
 
 
 if __name__ == '__main__':
-    args = initialize_parser()
-    Thread(target=root_connection_manager, args=(args.socket_port,)).start()
+    args = supervisor_initialize_parser()
+    tcp_server_port = args.socket_port
+    Thread(target=root_connection_manager, args=(tcp_server_port,)).start()
     app.run(port=args.flask_port, host='0.0.0.0')
 
 # TODO confirm each node when it sends to father the port in which TCP server is available

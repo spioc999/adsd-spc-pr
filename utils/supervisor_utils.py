@@ -1,7 +1,10 @@
-from netifaces import interfaces, ifaddresses, AF_INET
+import argparse
 from datetime import datetime
-from Status import Status
+from enums.son_status import Status
 import re
+
+FLASK_PORT = 10000
+TCP_SERVER_PORT = 10001
 
 FATHER = "father"
 SONS = "sons"
@@ -14,6 +17,7 @@ SON = "son"
 IS_FULL = "is_full"
 host_address = None
 regex_root_command = r"^\[PORT\]( {0,})([1-9]{1})([0-9]{3,})"
+
 
 def getRegisterNodeInfo(json):
     if json and all(key in json.keys() for key in [NODE_IP, NODE_PORT]):
@@ -30,14 +34,6 @@ def getConfirmNodeInfo(json):
             return father[NODE_IP], father[NODE_PORT], son[NODE_IP], son[NODE_PORT]
         
     raise Exception('Bad request', 400)
-
-
-def get_host_address():
-    for ifaceName in interfaces():
-        addresses = ' '.join([i['addr'] for i in ifaddresses(ifaceName).setdefault(AF_INET, [{'addr':''}] )])
-        if addresses != '' and addresses != '0.0.0.0' and addresses != '127.0.0.1':
-            return addresses
-    return '127.0.0.1'
 
 
 def add_son(node, son_id, unlimited_branch_size=False):
@@ -103,3 +99,22 @@ def decode_root_port_command(command):
     if pattern.match(command):
         return int(command.split(']')[1])
     raise ValueError("Command doesn't match the regex!")
+
+
+def supervisor_initialize_parser():
+    """Utility method that initializes argparse and return the args
+        @rtype: Namespace object
+        @returns: object built up from attributes parsed out of the command line
+    """
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-sp", "--socket_port",
+                        help="Port number that will be assigned to enums's socket",
+                        required=False,
+                        type=int,
+                        default=TCP_SERVER_PORT)
+    parser.add_argument("-fp", "--flask_port",
+                        help="Port number that will be assigned to flask's server",
+                        type=int,
+                        required=False,
+                        default=FLASK_PORT)
+    return parser.parse_args()
