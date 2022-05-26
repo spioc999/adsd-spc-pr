@@ -19,6 +19,7 @@ host_address = None
 regex_root_command = r"^\[PORT\]( {0,})([1-9]{1})([0-9]{3,})"
 
 
+
 def getRegisterNodeInfo(json):
     if json and all(key in json.keys() for key in [NODE_IP, NODE_PORT]):
         return json[NODE_IP], json[NODE_PORT]
@@ -94,7 +95,7 @@ def remove_node(tree, node_id):
     del tree[node_id]
 
 
-def decode_root_port_command(command):
+def decode_root_port_command(command): # TODO: Improve creting unique method to get command and value
     pattern = re.compile(regex_root_command)
     if pattern.match(command):
         return int(command.split(']')[1])

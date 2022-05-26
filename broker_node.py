@@ -1,25 +1,14 @@
 import socket
-from threading import Thread, Lock
+from threading import Thread
 from utils.common_utils import *
 from utils.broker_utils import *
 import requests
 
-SUPERVISOR_ENDPOINT = 'http://127.0.0.1:10000'
-activeConnections = dict()
-mutexACs = Lock()
-mutexTOPICs = Lock()
-topics = dict()
 
-
-def connection_manager_thread(id_):
+def connection_manager_thread(connection_id):
     pass
 
-
 def broker_tcp_server_manager(server_port):
-    global activeConnections
-    global mutexACs
-    global mutexTOPICs
-    global topics
     tcp_server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
     tcp_server_socket.bind(('0.0.0.0', server_port))
     try:
@@ -27,18 +16,7 @@ def broker_tcp_server_manager(server_port):
             print('Broker UP (port: {}), waiting for connections ...'.format(server_port))
             tcp_server_socket.listen()
             conn, address = tcp_server_socket.accept()
-
-            connection_id = f'{address[0]}:{address[1]}'
-            mutexACs.acquire()
-            activeConnections[connection_id] = {
-                'connection': conn,
-                'is_broker': False,
-                'ip': address[0],
-                'port': address[1],
-                'is_father': False
-            }
-            mutexACs.release()
-
+            connection_id = add_connection(address[0], address[1], conn)
             Thread(target=connection_manager_thread, args=(connection_id,), ).start()  #
 
     finally:
@@ -56,17 +34,7 @@ def connect_to_network_and_start_server(ip, tcp_port):
 
     # start server tcp
     Thread(target=broker_tcp_server_manager, args=(tcp_port,)).start()
-    father_id = f'{father_ip}:{father_port}'
-    mutexACs.acquire()
-    activeConnections[father_id] = {
-        'connection': father_connection,
-        'is_broker': True,
-        'ip': father_ip,
-        'port': father_port,
-        'is_father': True
-    }
-    mutexACs.release()
-
+    father_id = add_connection(father_ip, father_port, father_connection, is_broker=True, is_father=True)
     # start thread handling father broker connection
     Thread(target=connection_manager_thread, args=(father_id,)).start()
 
