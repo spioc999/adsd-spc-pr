@@ -71,12 +71,12 @@ def confirm_node():
         return exc.args[0], exc.args[1]
 
 
-def root_connection_manager(port):
+def root_connection_manager(server_port):
     global rootConnection
     global TCPServerSocket
     global tree
-    TCPServerSocket.bind(('0.0.0.0', port))
-    print(f"Supervisor socket listening on port: {port}")
+    TCPServerSocket.bind(('0.0.0.0', server_port))
+    print(f"Supervisor socket listening on port: {server_port}")
     root_id = None
     while True:
         print('waiting for new root...')
@@ -96,7 +96,7 @@ def root_connection_manager(port):
                     continue
                 rootConnection = True
                 root_id = f'{address[0]}:{port}'
-                temp_tree = create_node(root_id, f'{get_host_address()}:{port}')
+                temp_tree = create_node(root_id, f'{get_host_address()}:{server_port}')
                 if len(tree) > 0:
                     temp_tree.update(tree)
                 tree = temp_tree
