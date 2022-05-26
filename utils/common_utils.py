@@ -15,10 +15,11 @@ def get_host_address():
 
 def get_command_and_value(message):
     """
-
-    :param message: get the command and the value from a tcp message
+    Get the command and the value from a tcp message
+    :param message: message received from tcp value
     :return:
     """
+    message = message.decode('UTF-8')
     if command_regex.match(message):
         message = message[1:]  # removing [
         split_message = message.split(']')
@@ -26,5 +27,9 @@ def get_command_and_value(message):
         value = split_message[1].strip()
         if re.compile(command).match(value):
             return command, command.cast_value(value)
-    raise ValueError("Command doesn't match the regex!")
+    raise ValueError("Not valid message.")
+
+
+def build_command(command, value):
+    return f'[{command.name}] {value}'.encode('UTF-8')
 

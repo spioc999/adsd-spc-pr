@@ -89,10 +89,10 @@ def root_connection_manager(port):
                 print(f'root connection closed before confirmed!')
                 break
             try:
-                port = decode_root_port_command(data.decode('utf-8'))
-                if port < 49152 or port > 65535:
-                    conn.sendall("[RESULT] CHANGE_PORT".encode())
-                    print(f"Port {port} is out of range.")
+                command, port = get_command_and_value(data)
+                if command != Command.PORT or port < 49152 or port > 65535:
+                    conn.sendall(build_command(Command.RESULT, 'ERROR'))
+                    print(f"Error decoding port command and value")
                     continue
                 rootConnection = True
                 root_id = f'{address[0]}:{port}'
@@ -100,10 +100,10 @@ def root_connection_manager(port):
                 if len(tree) > 0:
                     temp_tree.update(tree)
                 tree = temp_tree
-                conn.sendall("[RESULT] OK".encode())
+                conn.sendall(build_command(Command.RESULT, 'OK'))
                 print(f'root connected!: {address}. Root id: {root_id}')
-            except:
-                print(f'Not valid port command from {address}: {data}')
+            except Exception as e:
+                print(f'From {address}: {data}. {e}')
 
         while rootConnection:
             data = conn.recv(1024)
