@@ -6,9 +6,26 @@ import requests
 
 
 def connection_manager_thread(connection_id):
+    #What should be do here
+    # 1. Wait for messages
+    # 2. after a message received decode command and vaulue and manage it in order to let broker communicate to each other
+    #    2.1 Receive a message and redirect it to all connections except the this one active in this thread
+    # 3. if connection is closed manage it as follow:
+        # if client: do nothing
+        # if a son node -> call the service supervisor.sonDown
+        # if a father node -> call the service supervisor.fatherDown and then reconnecto to network #
+            #(During this phase we should save messages received in order to redirect them on the network when connection is esthabilished?)
+
     pass
 
+
 def broker_tcp_server_manager(server_port):
+    """
+    This method create a tcp server and wait for connections.
+    After each connection create a thread to manage it.
+    :param server_port: port where tcp server will be hosted
+    :return: None
+    """
     tcp_server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
     tcp_server_socket.bind(('0.0.0.0', server_port))
     try:
@@ -34,6 +51,7 @@ def connect_to_network_and_start_server(ip, tcp_port):
 
     # start server tcp
     Thread(target=broker_tcp_server_manager, args=(tcp_port,)).start()
+    # adding father to active connections
     father_id = add_connection(father_ip, father_port, father_connection, is_broker=True, is_father=True)
     # start thread handling father broker connection
     Thread(target=connection_manager_thread, args=(father_id,)).start()
