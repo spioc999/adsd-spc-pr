@@ -13,7 +13,8 @@ rootConnection = False
 
 @app.route("/tree")
 def get_tree():
-    return render_template("tree.html")
+    file_name = generate_tree(tree)
+    return render_template(f"{file_name}.html")
 
 
 @app.route("/node/register", methods=['POST'])

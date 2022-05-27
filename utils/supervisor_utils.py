@@ -2,6 +2,10 @@ import argparse
 from datetime import datetime
 from enums.son_status import Status
 import re
+import random
+import string
+import os, shutil
+
 
 FLASK_PORT = 10000
 TCP_SERVER_PORT = 10001
@@ -122,3 +126,57 @@ def supervisor_initialize_parser():
                         required=False,
                         default=FLASK_PORT)
     return parser.parse_args()
+
+
+HTML_HEADER = '<!DOCTYPE html>' \
+              '<html lang="en">' \
+              '<head><meta charset="UTF-8">' \
+              '<link rel= "stylesheet" type= "text/css" href= "{{ url_for(\'static\',filename=\'styles/treeStyle.css\') }}">' \
+             '</head><body><div class="tree">'
+HTML_FOOTER = '</div></body></html>'
+NODE_HTML_OPEN = "<li>"
+NODE_HTML_CLOSE = "</li>"
+
+
+def get_random_string(length):
+    # choose from all lowercase letter
+    letters = string.ascii_lowercase
+    result_str = ''.join(random.choice(letters) for i in range(length))
+    return result_str
+
+
+def delete_file():
+    folder = 'templates/'
+    for filename in os.listdir(folder):
+        file_path = os.path.join(folder, filename)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        except Exception as e:
+            print('Failed to delete %s. Reason: %s' % (file_path, e))
+
+
+def get_html_node_structure(tree, node_id):
+    tree_structure_html = NODE_HTML_OPEN + '<a>' + node_id + '</a>'
+    if node_id in tree:
+        if len(tree[node_id][SONS]) > 0:
+            tree_structure_html += "<ul>"
+        for son_id in tree[node_id][SONS]:
+            tree_structure_html += get_html_node_structure(tree, son_id)
+        if len(tree[node_id][SONS]) > 0:
+            tree_structure_html += "</ul>"
+    tree_structure_html += NODE_HTML_CLOSE
+    return tree_structure_html
+
+
+def generate_tree(tree):
+    delete_file()
+    temp_file_name = get_random_string(8)
+    tree_page = HTML_HEADER + ('<ul>' + get_html_node_structure(tree, list(tree.keys())[0]) + '</ul>' if len(tree.keys()) > 0 else '<p> Empty Tree </p>') + HTML_FOOTER
+    tree_html = open(f"templates/{temp_file_name}.html", "w+")
+    tree_html.write(tree_page)
+    tree_html.close()
+    return temp_file_name
+
