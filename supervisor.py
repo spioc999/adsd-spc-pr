@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 import socket
 from threading import Thread
 from utils.common_utils import *
@@ -11,9 +11,9 @@ tree = dict()
 rootConnection = False
 
 
-@app.route("/tree", methods=['GET'])
+@app.route("/tree")
 def get_tree():
-    return jsonify(tree)
+    return render_template("tree.html")
 
 
 @app.route("/node/register", methods=['POST'])
