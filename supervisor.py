@@ -71,6 +71,15 @@ def confirm_node():
         return exc.args[0], exc.args[1]
 
 
+@app.route("/node/down", methods=['POST'])
+def down_node():
+    reporter_ip, reporter_port, down_node_id = get_down_node_info(request.json)
+    # look if the down node is a father or a son
+    # remove it link with the reporter
+    # remove the link from the down node to the reporter
+    # if the down node has not active connections then remove it from tree structure
+
+
 def root_connection_manager(server_port):
     global rootConnection
     global TCPServerSocket

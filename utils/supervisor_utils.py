@@ -19,7 +19,6 @@ host_address = None
 regex_root_command = r"^\[PORT\]( {0,})([1-9]{1})([0-9]{3,})"
 
 
-
 def getRegisterNodeInfo(json):
     if json and all(key in json.keys() for key in [NODE_IP, NODE_PORT]):
         return json[NODE_IP], json[NODE_PORT]
@@ -35,6 +34,10 @@ def getConfirmNodeInfo(json):
             return father[NODE_IP], father[NODE_PORT], son[NODE_IP], son[NODE_PORT]
         
     raise Exception('Bad request', 400)
+
+
+def get_down_node_info(json):
+    pass
 
 
 def add_son(node, son_id, unlimited_branch_size=False):
