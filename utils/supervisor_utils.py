@@ -158,13 +158,15 @@ def delete_file():
             print('Failed to delete %s. Reason: %s' % (file_path, e))
 
 
-def get_html_node_structure(tree, node_id):
-    tree_structure_html = NODE_HTML_OPEN + '<a>' + node_id + '</a>'
+def get_html_node_structure(tree, node_id, status=''):
+    status_html = f'<br/>{status}' if len(status) > 0 else ''
+    tree_structure_html = NODE_HTML_OPEN + '<a>' + f'{node_id}{status_html}' + '</a>'
     if node_id in tree:
         if len(tree[node_id][SONS]) > 0:
             tree_structure_html += "<ul>"
         for son_id in tree[node_id][SONS]:
-            tree_structure_html += get_html_node_structure(tree, son_id)
+            status_son = tree[node_id][SONS][son_id][STATUS]
+            tree_structure_html += get_html_node_structure(tree, son_id, status_son)
         if len(tree[node_id][SONS]) > 0:
             tree_structure_html += "</ul>"
     tree_structure_html += NODE_HTML_CLOSE
@@ -172,6 +174,7 @@ def get_html_node_structure(tree, node_id):
 
 
 def generate_tree(tree):
+    os.makedirs(os.path.dirname('templates/'), exist_ok=True)
     delete_file()
     temp_file_name = get_random_string(8)
     tree_page = HTML_HEADER + ('<ul>' + get_html_node_structure(tree, list(tree.keys())[0]) + '</ul>' if len(tree.keys()) > 0 else '<p> Empty Tree </p>') + HTML_FOOTER
