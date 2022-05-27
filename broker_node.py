@@ -52,10 +52,9 @@ def register_node_and_connect_to_father(ip, tcp_port):
             ip_father, port_father = ip_port_father[0], ip_port_father[1]
             father_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
             father_socket.connect((ip_father, port_father))
-            message = f'[PORT] {tcp_port}'
-            father_socket.sendall(message.encode('UTF-8'))
-            response_from_father = father_socket.recv(1024)
-            if 'OK' in response_from_father.decode():
+            father_socket.sendall(build_command(Command.PORT, tcp_port))
+            command, value = get_command_and_value(father_socket.recv(1024))
+            if command == Command.RESULT and value == 'OK':
                 return ip_father, port_father, father_socket
         except Exception as e:
             print(e)
