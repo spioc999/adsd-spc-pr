@@ -15,8 +15,7 @@ def connection_manager_thread(connection_id):
         # if a son node -> call the service supervisor.sonDown
         # if a father node -> call the service supervisor.fatherDown and then reconnecto to network #
             #(During this phase we should save messages received in order to redirect them on the network when connection is esthabilished?)
-
-    pass
+    print("Started connection manager")
 
 
 def broker_tcp_server_manager(server_port):
@@ -67,7 +66,7 @@ def register_node_and_connect_to_father(ip, tcp_port):
     else:
         try:
             ip_port_father = response.text.split(':')
-            ip_father, port_father = ip_port_father[0], ip_port_father[1]
+            ip_father, port_father = ip_port_father[0], int(ip_port_father[1])
             father_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
             father_socket.connect((ip_father, port_father))
             father_socket.sendall(build_command(Command.PORT, tcp_port))

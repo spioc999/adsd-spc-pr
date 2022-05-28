@@ -56,7 +56,7 @@ def confirm_node():
         raise Exception("Father node not found", 12163)  # 12163 http disconnected, father must reconnect to network
 
     father_node = tree[father_node_id]
-    if son_node_id in father_node[SONS]:
+    if son_node_id not in father_node[SONS]:
         raise Exception('Son not found', 404)  # TODO father must refuse son connection
 
     son_dict_item = father_node[SONS][son_node_id]
