@@ -23,5 +23,3 @@ CONNECTION = 'connection'
 IS_BROKER = 'is_broker'
 IP = 'ip'
 PORT = 'port'
-IS_FATHER = 'is_father'
-

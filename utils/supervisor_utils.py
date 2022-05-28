@@ -1,7 +1,7 @@
 import argparse
 from datetime import datetime
 from enums.son_status import Status
-from constants import *
+from utils.constants import *
 
 host_address = None
 
@@ -24,8 +24,8 @@ def getConfirmNodeInfo(json):
 
 
 def getDownNodeInfo(json):
-    if json and all(key in json.jeys() for key in [NODE_ID, DOWN_ID, IS_FATHER]):
-        return json[NODE_ID], json[DOWN_ID], json[IS_FATHER]
+    if json and all(key in json.keys() for key in [NODE_ID, DOWN_ID]):
+        return json[NODE_ID], json[DOWN_ID]
     raise Exception('Bad request', 400)
 
 
@@ -39,9 +39,10 @@ def add_son(node, son_id, unlimited_branch_size=False):
 
 
 def remove_son(node, son_id):
-    if node[IS_FULL]:
-        node[IS_FULL] = False
-    del node[SONS][son_id]
+    if son_id in node[SONS]:
+        if node[IS_FULL]:
+            node[IS_FULL] = False
+        del node[SONS][son_id]
 
 
 def remove_father(node):
@@ -104,4 +105,13 @@ def supervisor_initialize_parser():
                         required=False,
                         default=FLASK_PORT)
     return parser.parse_args()
+
+
+def is_father_for_node(node, father_id):
+    return node[FATHER] == father_id
+
+
+def is_son_for_node(node, son_id):
+    return son_id in node[SONS]
+
 

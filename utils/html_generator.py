@@ -1,6 +1,6 @@
 import os, shutil
-import random
-from supervisor_utils import SONS, STATUS
+from utils.supervisor_utils import SONS, STATUS
+import uuid
 
 HTML_HEADER = '<!DOCTYPE html>' \
               '<html lang="en">' \
@@ -43,7 +43,7 @@ def get_html_node_structure(tree, node_id, status=''):
 def generate_tree(tree):
     os.makedirs(os.path.dirname('templates/'), exist_ok=True)
     delete_file()
-    temp_file_name = 'tree_html_' + str(random.randint(0, 100))
+    temp_file_name = 'tree_html_' + str(uuid.uuid4())
     tree_page = HTML_HEADER + ('<ul>' + get_html_node_structure(tree, list(tree.keys())[0]) + '</ul>' if len(
         tree.keys()) > 0 else '<p> Empty Tree </p>') + HTML_FOOTER
     tree_html = open(f"templates/{temp_file_name}.html", "w+")

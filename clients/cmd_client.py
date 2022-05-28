@@ -41,6 +41,19 @@ class myPrompt(Cmd):
             except:
                 print("Error during connection... try again")
 
+    def do_connect_localhost(self, inp):
+        if not self.is_connect:
+            try:
+                address = 'localhost'
+                port = int(inp)
+                self.socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
+                self.socket.connect((address, port))
+                self.is_connect = True
+                Thread(target=self.receive_messages, args=(self.socket,)).start()
+                print(self.socket)
+            except:
+                print("Error during connection... try again")
+
     def do_disconnect(self, inp):
         if self.is_connect:
             self.socket.close()
@@ -49,6 +62,11 @@ class myPrompt(Cmd):
     def do_sendMessage(self, inp):
         if self.is_connect:
             messaggio = inp
+            self.socket.sendall(messaggio.encode('UTF-8'))
+
+    def do_send_port(self, inp):
+        if self.is_connect:
+            messaggio = '[PORT] ' + inp
             self.socket.sendall(messaggio.encode('UTF-8'))
 
     # Chiudere tutte le risorse potenzialmente attive
