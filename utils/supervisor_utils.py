@@ -1,22 +1,9 @@
 import argparse
 from datetime import datetime
 from enums.son_status import Status
-import re
+from constants import *
 
-FLASK_PORT = 10000
-TCP_SERVER_PORT = 10001
-
-FATHER = "father"
-SONS = "sons"
-NODE_IP = "node_ip"
-NODE_PORT = "node_port"
-STATUS = "status"
-TIME = "time"
-TREE_BRANCH_SIZE = 2 #Binary tree
-SON = "son"
-IS_FULL = "is_full"
 host_address = None
-regex_root_command = r"^\[PORT\]( {0,})([1-9]{1})([0-9]{3,})"
 
 
 def getRegisterNodeInfo(json):
@@ -36,8 +23,10 @@ def getConfirmNodeInfo(json):
     raise Exception('Bad request', 400)
 
 
-def get_down_node_info(json):
-    pass
+def getDownNodeInfo(json):
+    if json and all(key in json.jeys() for key in [NODE_ID, DOWN_ID, IS_FATHER]):
+        return json[NODE_ID], json[DOWN_ID], json[IS_FATHER]
+    raise Exception('Bad request', 400)
 
 
 def add_son(node, son_id, unlimited_branch_size=False):
@@ -96,13 +85,6 @@ def create_node(node_id, father_id):
 
 def remove_node(tree, node_id):
     del tree[node_id]
-
-
-def decode_root_port_command(command): # TODO: Improve creting unique method to get command and value
-    pattern = re.compile(regex_root_command)
-    if pattern.match(command):
-        return int(command.split(']')[1])
-    raise ValueError("Command doesn't match the regex!")
 
 
 def supervisor_initialize_parser():

@@ -75,7 +75,7 @@ def confirm_node():
 
 @app.route("/node/down", methods=['POST'])
 def down_node():
-    reporter_ip, reporter_port, down_node_id = get_down_node_info(request.json)
+    reporter_node_id, down_node_id = get_down_node_info(request.json)
     # look if the down node is a father or a son
     # remove it link with the reporter
     # remove the link from the down node to the reporter
