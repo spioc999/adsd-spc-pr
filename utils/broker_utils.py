@@ -1,6 +1,8 @@
 import argparse
 from threading import Lock
-from common_utils import *
+from utils.constants import *
+import requests
+from utils.common_utils import *
 
 mutexACs = Lock()
 activeConnections = dict()
@@ -32,11 +34,73 @@ def add_connection(ip, port, connection, is_broker=False, is_father=False):
     connection_id = f'{ip}:{port}'
     mutexACs.acquire()
     activeConnections[connection_id] = {
-        'connection': connection,
-        'is_broker': is_broker,
-        'ip': ip,
-        'port': port,
-        'is_father': is_father
+        CONNECTION: connection,
+        IS_BROKER: is_broker,
+        IP: ip,
+        PORT: port,
+        IS_FATHER: is_father
     }
     mutexACs.release()
     return connection_id
+
+
+def get_connection_by_id(connection_id):
+    mutexACs.acquire()
+    conn = activeConnections[connection_id][CONNECTION]
+    mutexACs.release()
+    return conn
+
+
+def delete_active_connection(connection_id):
+    mutexACs.acquire()
+    del activeConnections[connection_id]
+    mutexACs.release()
+
+
+def get_info_ac_by_id(connection_id):
+    mutexACs.acquire()
+    is_broker = activeConnections[connection_id][IS_BROKER]
+    is_father = activeConnections[connection_id][IS_FATHER]
+    ip = activeConnections[connection_id][IP]
+    port = activeConnections[connection_id][PORT]
+    mutexACs.release()
+    return is_broker, is_father, ip, port
+
+
+def handle_active_connection_lost(connection_id, current_node_id):
+    """
+    This method handles the connection lost case
+    :param connection_id: connection lost id
+    :param current_node_id: current node id
+    :return: connection_lost, should_reconnect_network -> (boolean, boolean) tuple
+    """
+    is_broker, is_father, ip_down, port_down = get_info_ac_by_id(connection_id)
+    if not is_broker:
+        print(f'client connection lost: {connection_id}!')
+        delete_active_connection(connection_id)
+        return True, False
+
+    # broker connection handling
+    broker_down_id = f'{ip_down}:{port_down}'
+    response = requests.post(f'{SUPERVISOR_ENDPOINT}/node/down', json={
+        'node_id': current_node_id,
+        'down_id': broker_down_id
+    })
+
+    if not is_father:  # means that current broker is the father of lost node
+        if response.status_code != 200:
+            print(f'ERROR {response.status_code} communicating son broker down: {broker_down_id}')
+        else:
+            print(f'son broker down ({broker_down_id}) and communicated correctly to supervisor!')
+            delete_active_connection(connection_id)
+            return True, False
+    else:
+        if response.status_code != 200:
+            print(f'ERROR {response.status_code} communicating father broker down: {broker_down_id}')
+        else:
+            print(f'father broker connection lost ({broker_down_id}) and communicated correctly to supervisor!')
+            delete_active_connection(connection_id)
+            return True, True
+
+    # here only if error from service
+    return False, False

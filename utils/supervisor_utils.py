@@ -6,13 +6,13 @@ from utils.constants import *
 host_address = None
 
 
-def getRegisterNodeInfo(json):
+def get_register_node_info(json):
     if json and all(key in json.keys() for key in [NODE_IP, NODE_PORT]):
         return json[NODE_IP], json[NODE_PORT]
     raise Exception('Bad request', 400)
 
 
-def getConfirmNodeInfo(json):
+def get_confirm_node_info(json):
     if json and all(key in json.keys() for key in [FATHER, SON]):
         father = json[FATHER]
         son = json[SON]
@@ -23,7 +23,7 @@ def getConfirmNodeInfo(json):
     raise Exception('Bad request', 400)
 
 
-def getDownNodeInfo(json):
+def get_down_node_info(json):
     if json and all(key in json.keys() for key in [NODE_ID, DOWN_ID]):
         return json[NODE_ID], json[DOWN_ID]
     raise Exception('Bad request', 400)

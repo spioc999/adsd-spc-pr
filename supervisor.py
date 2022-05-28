@@ -29,7 +29,7 @@ def get_tree():
 
 @app.route("/node/register", methods=['POST'])
 def register_node():
-    node_ip, node_port = getRegisterNodeInfo(request.json)
+    node_ip, node_port = get_register_node_info(request.json)
     node_id = f'{node_ip}:{node_port}'
     if not rootConnection:  # No root tree is present
         # sent enums tcp server socket to root
@@ -50,7 +50,7 @@ def register_node():
 
 @app.route("/node/confirm", methods=['POST'])
 def confirm_node():
-    father_node_ip, father_node_port, son_node_ip, son_node_port = getConfirmNodeInfo(request.json)
+    father_node_ip, father_node_port, son_node_ip, son_node_port = get_confirm_node_info(request.json)
     father_node_id = f'{father_node_ip}:{father_node_port}'
     son_node_id = f'{son_node_ip}:{son_node_port}'
     if father_node_id not in tree:
@@ -77,7 +77,7 @@ def confirm_node():
 
 @app.route("/node/down", methods=['POST'])
 def node_down():
-    reporter_node_id, down_node_id = getDownNodeInfo(request.json)
+    reporter_node_id, down_node_id = get_down_node_info(request.json)
     if reporter_node_id not in tree:
         raise Exception('Bad request', 400)
 

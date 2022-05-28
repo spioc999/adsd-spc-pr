@@ -21,5 +21,6 @@ DOWN_ID = 'down_id'
 # Broker active connections dict constants
 CONNECTION = 'connection'
 IS_BROKER = 'is_broker'
+IS_FATHER = 'is_father'
 IP = 'ip'
 PORT = 'port'
