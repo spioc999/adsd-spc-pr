@@ -44,6 +44,16 @@ def add_connection(ip, port, connection, is_broker=False, is_father=False):
     return connection_id
 
 
+def update_info_connection(connection_id, is_broker=None, port=None):
+    mutexACs.acquire()
+    if connection_id in activeConnections:
+        if is_broker is not None:
+            activeConnections[connection_id][IS_BROKER] = is_broker
+        if port is not None:
+            activeConnections[connection_id][PORT] = port
+    mutexACs.release()
+
+
 def get_connection_by_id(connection_id):
     mutexACs.acquire()
     conn = activeConnections[connection_id][CONNECTION]
@@ -104,3 +114,30 @@ def handle_active_connection_lost(connection_id, current_node_id):
 
     # here only if error from service
     return False, False
+
+
+def handle_command_port(port_value, connection_id, current_node_ip, current_node_port):
+    conn = get_connection_by_id(connection_id)
+    if port_value < LOWER_AVAILABLE_PORT or port_value > UPPER_AVAILABLE_PORT:
+        conn.sendall(build_command(Command.RESULT, 'ERROR'))
+        print(f"Error {port_value} not allowed as port value")
+    else:
+        ip_node = connection_id.split(':')[0]
+        response = requests.post(f'{SUPERVISOR_ENDPOINT}/node/confirm', json={
+            'father': {
+                'node_ip': current_node_ip,
+                'node_port': current_node_port
+            },
+            'son': {
+                'node_ip': ip_node,
+                'node_port': port_value
+            }
+        })
+
+        if response.status_code != 200:
+            conn.sendall(build_command(Command.RESULT, 'ERROR'))
+            print(f'Error during confirm broker {ip_node}:{port_value}!')
+        else:
+            update_info_connection(connection_id, is_broker=True, port=port_value)
+            conn.sendall(build_command(Command.RESULT, 'OK'))
+            print(f'Broker {ip_node}:{port_value} confirmed successfully!')

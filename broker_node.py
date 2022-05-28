@@ -31,7 +31,11 @@ def connection_manager_thread(connection_id):
             if should_reconnect:
                 connect_to_broker_network()
         else:
-            print(data.decode('UTF-8'))  # TODO
+            command, value = get_command_and_value(data)
+            if command == Command.PORT:
+                handle_command_port(value, connection_id, host_address, port)
+            else:
+                print(data.decode('UTF-8')) #TODO handle the other ones
 
 
 def broker_tcp_server_manager():
