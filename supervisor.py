@@ -49,76 +49,64 @@ def register_node():
 
 @app.route("/node/confirm", methods=['POST'])
 def confirm_node():
-    try:
-        father_node_ip, father_node_port, son_node_ip, son_node_port = getConfirmNodeInfo(request.json)
-        father_node_id = f'{father_node_ip}:{father_node_port}'
-        son_node_id = f'{son_node_ip}:{son_node_port}'
-        if father_node_id not in tree:
-            raise Exception("Father node not found", 12163) # 12163 http disconnected, father must reconnect to network
+    father_node_ip, father_node_port, son_node_ip, son_node_port = getConfirmNodeInfo(request.json)
+    father_node_id = f'{father_node_ip}:{father_node_port}'
+    son_node_id = f'{son_node_ip}:{son_node_port}'
+    if father_node_id not in tree:
+        raise Exception("Father node not found", 12163)  # 12163 http disconnected, father must reconnect to network
 
-        father_node = tree[father_node_id]
-        if son_node_id in father_node[SONS]:
-            raise Exception('Son not found', 404)  # TODO father must refuse son connection
+    father_node = tree[father_node_id]
+    if son_node_id in father_node[SONS]:
+        raise Exception('Son not found', 404)  # TODO father must refuse son connection
 
-        son_dict_item = father_node[SONS][son_node_id]
-        if son_dict_item[STATUS] == Status.CONFIRMED:
-            return 'Already confirmed', 200
+    son_dict_item = father_node[SONS][son_node_id]
+    if son_dict_item[STATUS] == Status.CONFIRMED:
+        return 'Already confirmed', 200
 
-        son_dict_item[STATUS] = Status.CONFIRMED
-        son_dict_item[TIME] = datetime.now()
-        if son_node_id in tree:
-            tree[son_node_id][FATHER] = father_node_id
-        else:
-            new_node = create_node(son_node_id, father_node_id)
-            tree.update(new_node)
-        remove_sons_if_needed(father_node)
-        return 'Success', 200
-    except Exception as exc:
-        if not exc.args or len(exc.args) < 2:
-            return 'Error', 500
-
-        return exc.args[0], exc.args[1]
+    son_dict_item[STATUS] = Status.CONFIRMED
+    son_dict_item[TIME] = datetime.now()
+    if son_node_id in tree:
+        tree[son_node_id][FATHER] = father_node_id
+    else:
+        new_node = create_node(son_node_id, father_node_id)
+        tree.update(new_node)
+    remove_sons_if_needed(father_node)
+    return 'Success', 200
 
 
 @app.route("/node/down", methods=['POST'])
 def node_down():
-    safe_service_run()
-    try:
-        reporter_node_id, down_node_id = getDownNodeInfo(request.json)
-        if reporter_node_id not in tree:
-            raise Exception('Bad request', 400)
+    reporter_node_id, down_node_id = getDownNodeInfo(request.json)
+    if reporter_node_id not in tree:
+        raise Exception('Bad request', 400)
 
-        reporter_node = tree[reporter_node_id]
-        is_reporter_father = is_father_for_node(reporter_node, down_node_id)
-        if not is_reporter_father and not is_son_for_node(reporter_node, down_node_id):
-            raise Exception(f"Relationship not found between nodes: {reporter_node_id} - {down_node_id}", 404)
-        if is_reporter_father and is_son_for_node(reporter_node, down_node_id):
-            raise Exception(
-                f"Double Relationship found between nodes: {reporter_node_id} - {down_node_id}. Needs more investigation",
-                500)
+    reporter_node = tree[reporter_node_id]
+    is_reporter_father = is_father_for_node(reporter_node, down_node_id)
+    if not is_reporter_father and not is_son_for_node(reporter_node, down_node_id):
+        raise Exception(f"Relationship not found between nodes: {reporter_node_id} - {down_node_id}", 404)
+    if is_reporter_father and is_son_for_node(reporter_node, down_node_id):
+        raise Exception(
+            f"Double Relationship found between nodes: {reporter_node_id} - {down_node_id}. Needs more investigation",
+            500)
 
-        # remove link from the reporter
-        if is_reporter_father:
-            reporter_node[FATHER] = None
-        else:
-            del reporter_node[SONS][down_node_id]
+    # remove link from the reporter
+    if is_reporter_father:
+        reporter_node[FATHER] = None
+    else:
+        del reporter_node[SONS][down_node_id]
 
-        # remove the link from the down node
-        down_node = tree[down_node_id]
-        if down_node_id in tree:
-            if is_reporter_father and is_son_for_node(down_node, reporter_node_id):
-                del down_node[SONS][reporter_node_id]
-            elif not is_reporter_father and is_father_for_node(down_node, reporter_node_id):
-                down_node[FATHER] = None
+    # remove the link from the down node
+    down_node = tree[down_node_id]
+    if down_node_id in tree:
+        if is_reporter_father and is_son_for_node(down_node, reporter_node_id):
+            del down_node[SONS][reporter_node_id]
+        elif not is_reporter_father and is_father_for_node(down_node, reporter_node_id):
+            down_node[FATHER] = None
 
-            # if the down node has not active connections then remove it from tree structure
-            if down_node[FATHER] is None and len(down_node[SONS]) == 0:
-                remove_node(tree, down_node_id)
-        return "Success", 200
-    except Exception as exc:
-        if not exc.args or len(exc.args) < 2:
-            return 'Error', 500
-        return exc.args[0], exc.args[1]
+        # if the down node has not active connections then remove it from tree structure
+        if down_node[FATHER] is None and len(down_node[SONS]) == 0:
+            remove_node(tree, down_node_id)
+    return "Success", 200
 
 
 def root_connection_manager(server_port):
