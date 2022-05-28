@@ -37,7 +37,7 @@ def register_node():
         # get father id
         current_father_id = tree[node_id][FATHER]
         # remove son from father
-        if current_father_id:
+        if current_father_id and current_father_id in tree:
             remove_son(tree[current_father_id], node_id)
         # search new father
         father_id = search_father_and_add_as_son(tree, node_id, current_father_id)

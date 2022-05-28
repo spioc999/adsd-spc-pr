@@ -1,3 +1,4 @@
+import random
 import socket
 from threading import Thread
 from utils.common_utils import *
@@ -46,7 +47,9 @@ def connect_to_network_and_start_server(ip, tcp_port):
     father_port = None
 
     while not father_connection or not father_ip or not father_port:
-        father_ip, father_port, father_connection = register_node_and_connect_to_father(ip, tcp_port)
+        status_code, father_ip, father_port, father_connection = register_node_and_connect_to_father(ip, tcp_port)
+        if status_code == 409:
+            tcp_port = random.randint(50000, 650000)
 
     # start server tcp
     Thread(target=broker_tcp_server_manager, args=(tcp_port,)).start()
@@ -72,11 +75,11 @@ def register_node_and_connect_to_father(ip, tcp_port):
             father_socket.sendall(build_command(Command.PORT, tcp_port))
             command, value = get_command_and_value(father_socket.recv(1024))
             if command == Command.RESULT and value == 'OK':
-                return ip_father, port_father, father_socket
+                return response.status_code, ip_father, port_father, father_socket
         except Exception as e:
             print(e)
 
-    return None, None, None
+    return response.status_code, None, None, None
 
 
 if __name__ == '__main__':

@@ -50,12 +50,15 @@ def remove_father(node):
 
 
 def search_father_and_add_as_son(tree, node_id, father_to_exclude=None, unlimited_branch_size=False):
+    if father_to_exclude and father_to_exclude not in tree and len(tree) == 1:
+        raise Exception("No available fathers", 409)  # http conflict
+
     for node in tree:
         if node != father_to_exclude and node != node_id and (unlimited_branch_size or len(tree[node][SONS]) < TREE_BRANCH_SIZE) and not tree[node][IS_FULL] and tree[node][FATHER]:
             father_id = node
             add_son(tree[node], node_id, unlimited_branch_size)
             return father_id
-    return search_father_and_add_as_son(tree, node_id, unlimited_branch_size=True)  # If not available father extend branch size
+    return search_father_and_add_as_son(tree, node_id, father_to_exclude=father_to_exclude, unlimited_branch_size=True)  # If not available father extend branch size
 
 
 def remove_sons_if_needed(node):
