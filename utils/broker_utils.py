@@ -1,8 +1,8 @@
 import argparse
 from threading import Lock
+from common_utils import *
 
 mutexACs = Lock()
-TCP_SERVER_PORT = 65535 #last port available
 activeConnections = dict()
 SUPERVISOR_ENDPOINT = 'http://127.0.0.1:10000'
 mutexTOPICs = Lock()
@@ -15,7 +15,7 @@ def broker_initialize_parser():
                         help="Port number that will be assigned to broker's server socket",
                         required=False,
                         type=int,
-                        default=TCP_SERVER_PORT)
+                        default=UPPER_AVAILABLE_PORT)
     return parser.parse_args()
 
 

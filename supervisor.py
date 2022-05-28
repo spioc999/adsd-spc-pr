@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, render_template
 import socket
 from threading import Thread
 from utils.common_utils import *
@@ -10,6 +10,7 @@ app.config['JSON_SORT_KEYS'] = False
 TCPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
 tree = dict()
 rootConnection = False
+index_last_broker_sent = 0
 
 
 @app.errorhandler(Exception)
@@ -57,7 +58,7 @@ def confirm_node():
 
     father_node = tree[father_node_id]
     if son_node_id not in father_node[SONS]:
-        raise Exception('Son not found', 404)  # TODO father must refuse son connection
+        raise Exception('Son not found', 404)
 
     son_dict_item = father_node[SONS][son_node_id]
     if son_dict_item[STATUS] == Status.CONFIRMED:
@@ -109,6 +110,21 @@ def node_down():
     return "Success", 200
 
 
+@app.route("/broker", methods=['GET'])
+def get_available_broker():
+    global index_last_broker_sent
+    node_ids = list(n_id for n_id in tree if tree[n_id][FATHER])
+    if len(node_ids) == 0:
+        raise Exception("No available broker!", 404)
+
+    if index_last_broker_sent >= len(node_ids):
+        index_last_broker_sent = 0
+
+    broker_id = node_ids[index_last_broker_sent]
+    index_last_broker_sent += 1
+    return broker_id, 200
+
+
 def root_connection_manager(server_port):
     global rootConnection
     global TCPServerSocket
@@ -128,7 +144,7 @@ def root_connection_manager(server_port):
                 break
             try:
                 command, port = get_command_and_value(data)
-                if command != Command.PORT or port < 49152 or port > 65535:
+                if command != Command.PORT or port < LOWER_AVAILABLE_PORT or port > UPPER_AVAILABLE_PORT:
                     conn.sendall(build_command(Command.RESULT, 'ERROR'))
                     print(f"Error decoding port command and value")
                     continue
@@ -160,5 +176,3 @@ if __name__ == '__main__':
     tcp_server_port = args.socket_port
     Thread(target=root_connection_manager, args=(tcp_server_port,)).start()
     app.run(port=args.flask_port, host='0.0.0.0')
-
-# TODO confirm each node when it sends to father the port in which TCP server is available

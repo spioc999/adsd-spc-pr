@@ -28,13 +28,14 @@ def broker_tcp_server_manager(server_port):
     """
     tcp_server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
     tcp_server_socket.bind(('0.0.0.0', server_port))
+    print('Broker UP (port: {})'.format(server_port))
     try:
         while True:
-            print('Broker UP (port: {}), waiting for connections ...'.format(server_port))
+            print('Waiting for connections ...')
             tcp_server_socket.listen()
             conn, address = tcp_server_socket.accept()
             connection_id = add_connection(address[0], address[1], conn)
-            Thread(target=connection_manager_thread, args=(connection_id,), ).start()  #
+            Thread(target=connection_manager_thread, args=(connection_id,), ).start()
 
     finally:
         if tcp_server_socket:
@@ -49,7 +50,7 @@ def connect_to_network_and_start_server(ip, tcp_port):
     while not father_connection or not father_ip or not father_port:
         status_code, father_ip, father_port, father_connection = register_node_and_connect_to_father(ip, tcp_port)
         if status_code == 409:
-            tcp_port = random.randint(50000, 650000)
+            tcp_port = random.randint(LOWER_AVAILABLE_PORT, UPPER_AVAILABLE_PORT)  # if ip and port already in tree
 
     # start server tcp
     Thread(target=broker_tcp_server_manager, args=(tcp_port,)).start()

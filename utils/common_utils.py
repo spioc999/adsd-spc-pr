@@ -3,6 +3,8 @@ import re
 from enums.Command import Command
 
 command_regex = re.compile('^\[([A-Z]+)\]')
+UPPER_AVAILABLE_PORT = 65535
+LOWER_AVAILABLE_PORT = 49152
 
 
 def get_host_address():

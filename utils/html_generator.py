@@ -42,7 +42,7 @@ def get_html_node_structure(tree, node_id, status=''):
 
 def generate_tree(tree):
     os.makedirs(os.path.dirname('templates/'), exist_ok=True)
-    delete_file()
+    delete_file()  # delete previous file if exists
     temp_file_name = 'tree_html_' + str(uuid.uuid4())
     tree_page = HTML_HEADER + ('<ul>' + get_html_node_structure(tree, list(tree.keys())[0]) + '</ul>' if len(
         tree.keys()) > 0 else '<p> Empty Tree </p>') + HTML_FOOTER
