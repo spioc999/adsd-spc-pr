@@ -3,6 +3,7 @@ import socket
 from threading import Thread
 from utils.common_utils import *
 from utils.supervisor_utils import *
+from utils.html_generator import generate_tree
 
 app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
