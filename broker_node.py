@@ -108,8 +108,13 @@ def register_current_node_and_connect_to_father():
     return response.status_code, None, None, None
 
 
-if __name__ == '__main__':
+def start():
+    global port, host_address
     args = broker_initialize_parser()
     port = args.socket_port
     host_address = get_host_address()
     connect_to_broker_network(start_tcp_server=True)
+
+
+if __name__ == '__main__':
+    start()
