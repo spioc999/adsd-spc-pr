@@ -3,8 +3,6 @@ from datetime import datetime
 from enums.son_status import Status
 from utils.constants import *
 
-host_address = None
-
 
 def get_register_node_info(json):
     if json and all(key in json.keys() for key in [NODE_IP, NODE_PORT]):
@@ -49,8 +47,8 @@ def remove_father(node):
     node[FATHER] = None
 
 
-def search_father_and_add_as_son(tree, node_id, father_to_exclude=None, unlimited_branch_size=False):
-    if father_to_exclude and father_to_exclude not in tree and len(tree) == 1:
+def search_father_and_add_as_son(tree, node_id, supervisor_id, father_to_exclude=None, unlimited_branch_size=False):
+    if father_to_exclude and father_to_exclude == supervisor_id:
         raise Exception("No available fathers", 409)  # http conflict
 
     for node in tree:
@@ -58,7 +56,7 @@ def search_father_and_add_as_son(tree, node_id, father_to_exclude=None, unlimite
             father_id = node
             add_son(tree[node], node_id, unlimited_branch_size)
             return father_id
-    return search_father_and_add_as_son(tree, node_id, father_to_exclude=father_to_exclude, unlimited_branch_size=True)  # If not available father extend branch size
+    return search_father_and_add_as_son(tree, node_id, supervisor_id, father_to_exclude=father_to_exclude, unlimited_branch_size=True)  # If not available father extend branch size
 
 
 def remove_sons_if_needed(node):

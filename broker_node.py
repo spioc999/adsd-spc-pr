@@ -52,6 +52,7 @@ def broker_tcp_server_manager():
             tcp_server_socket.listen()
             conn, address = tcp_server_socket.accept()
             print(f"Connection established with: {address}")
+            conn.sendall(build_command(Command.RESULT, "OK"))
             connection_id = add_connection(address[0], address[1], conn)
             Thread(target=connection_manager_thread, args=(connection_id,), ).start()
 
@@ -94,10 +95,13 @@ def register_current_node_and_connect_to_father():
             ip_father, port_father = ip_port_father[0], int(ip_port_father[1])
             father_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
             father_socket.connect((ip_father, port_father))
-            father_socket.sendall(build_command(Command.PORT, port))
-            command, value = get_command_and_value(father_socket.recv(1024))
-            if command == Command.RESULT and value == 'OK':
-                return response.status_code, ip_father, port_father, father_socket
+            data = father_socket.recv(1024)
+            command, value = get_command_and_value(data)
+            if command == Command.RESULT and value == "OK":
+                father_socket.sendall(build_command(Command.PORT, port))
+                command, value = get_command_and_value(father_socket.recv(1024))
+                if command == Command.RESULT and value == 'OK':
+                    return response.status_code, ip_father, port_father, father_socket
         except Exception as e:
             print(e)
 
