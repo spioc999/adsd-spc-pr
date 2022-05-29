@@ -1,7 +1,6 @@
 import random
 import socket
 from threading import Thread
-from utils.common_utils import *
 from utils.broker_utils import *
 
 port = None
@@ -84,8 +83,8 @@ def connect_to_broker_network(start_tcp_server=False):
 
 def register_current_node_and_connect_to_father():
     response = requests.post(f'{SUPERVISOR_ENDPOINT}/node/register', json={
-        'node_ip': host_address,
-        'node_port': port
+        NODE_IP: host_address,
+        NODE_PORT: port
     })
     if response.status_code != 200:
         print(response.text)
