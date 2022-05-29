@@ -88,7 +88,7 @@ def handle_active_connection_lost(connection_id, current_node_id):
     if not is_broker:
         print(f'client connection lost: {connection_id}!')
         delete_active_connection(connection_id)
-        return True, False
+        return False
 
     # broker connection handling
     broker_down_id = f'{ip_down}:{port_down}'
@@ -102,18 +102,13 @@ def handle_active_connection_lost(connection_id, current_node_id):
             print(f'ERROR {response.status_code} communicating son broker down: {broker_down_id}')
         else:
             print(f'son broker down ({broker_down_id}) and communicated correctly to supervisor!')
-            delete_active_connection(connection_id)
-            return True, False
     else:
         if response.status_code != 200:
             print(f'ERROR {response.status_code} communicating father broker down: {broker_down_id}')
         else:
             print(f'father broker connection lost ({broker_down_id}) and communicated correctly to supervisor!')
-            delete_active_connection(connection_id)
-            return True, True
-
-    # here only if error from service
-    return False, False
+    delete_active_connection(connection_id)
+    return is_father
 
 
 def handle_command_port(port_value, connection_id, current_node_ip, current_node_port):

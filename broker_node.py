@@ -11,13 +11,13 @@ host_address = None
 def connection_manager_thread(connection_id):
     # What should be do here
     # 1. Wait for messages
-    # 2. after a message received decode command and vaulue
-    # and manage it in order to let broker communicate to each other
-    #    2.1 Receive a message and redirect it to all connections except the this one active in this thread
+    # 2. after a message received decode command and value
+    # and manage it in order to let brokers communicate to each other
+    #    2.1 Receive a message and redirect it to all connections except the connection active in this thread
     # 3. if connection is closed manage it as follow:
     # if client: do nothing
     # if a son node -> call the service supervisor.sonDown
-    # if a father node -> call the service supervisor.fatherDown and then reconnecto to network #
+    # if a father node -> call the service supervisor.fatherDown and then reconnect to network #
     # (During this phase we should save messages received in order to
     # redirect them on the network when connection is esthabilished?)
     print(f"Started connection manager for {connection_id}...")
@@ -26,8 +26,8 @@ def connection_manager_thread(connection_id):
     while not connection_lost:
         data = conn.recv(1024)
         if not data:
-            connection_lost, should_reconnect = \
-                handle_active_connection_lost(connection_id, f'{host_address}:{port}')
+            should_reconnect = handle_active_connection_lost(connection_id, f'{host_address}:{port}')
+            connection_lost = True
             if should_reconnect:
                 connect_to_broker_network()
         else:
