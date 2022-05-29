@@ -93,8 +93,8 @@ def handle_active_connection_lost(connection_id, current_node_id):
     # broker connection handling
     broker_down_id = f'{ip_down}:{port_down}'
     response = requests.post(f'{SUPERVISOR_ENDPOINT}/node/down', json={
-        'node_id': current_node_id,
-        'down_id': broker_down_id
+        NODE_ID: current_node_id,
+        DOWN_ID: broker_down_id
     })
 
     if not is_father:  # means that current broker is the father of lost node
@@ -119,13 +119,13 @@ def handle_command_port(port_value, connection_id, current_node_ip, current_node
     else:
         ip_node = connection_id.split(':')[0]
         response = requests.post(f'{SUPERVISOR_ENDPOINT}/node/confirm', json={
-            'father': {
-                'node_ip': current_node_ip,
-                'node_port': current_node_port
+            FATHER: {
+                NODE_IP: current_node_ip,
+                NODE_PORT: current_node_port
             },
-            'son': {
-                'node_ip': ip_node,
-                'node_port': port_value
+            SON: {
+                NODE_IP: ip_node,
+                NODE_PORT: port_value
             }
         })
 
