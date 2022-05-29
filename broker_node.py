@@ -2,9 +2,11 @@ import random
 import socket
 from threading import Thread
 from utils.broker_utils import *
+import os
 
 port = None
 host_address = None
+pid = None
 
 
 def connection_manager_thread(connection_id):
@@ -45,7 +47,7 @@ def broker_tcp_server_manager():
     """
     tcp_server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
     tcp_server_socket.bind(('0.0.0.0', port))
-    print('Broker UP (port: {})'.format(port))
+    print('Broker UP (port: {} - PID: {})'.format(port, pid))
     try:
         while True:
             print('Waiting for connections ...')
@@ -108,13 +110,9 @@ def register_current_node_and_connect_to_father():
     return response.status_code, None, None, None
 
 
-def start():
-    global port, host_address
+if __name__ == '__main__':
     args = broker_initialize_parser()
     port = args.socket_port
     host_address = get_host_address()
+    pid = os.getpid()
     connect_to_broker_network(start_tcp_server=True)
-
-
-if __name__ == '__main__':
-    start()
