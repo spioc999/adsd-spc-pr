@@ -52,6 +52,7 @@ def broker_tcp_server_manager():
             print('Waiting for connections ...')
             tcp_server_socket.listen()
             conn, address = tcp_server_socket.accept()
+            print(f"Connection established with: {address}")
             connection_id = add_connection(address[0], address[1], conn)
             Thread(target=connection_manager_thread, args=(connection_id,), ).start()
 
