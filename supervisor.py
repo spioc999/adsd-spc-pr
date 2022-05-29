@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, jsonify
 import socket
 from threading import Thread
 from utils.common_utils import *
@@ -23,9 +23,14 @@ def handle_exceptions(exc):
 
 
 @app.route("/tree", methods=['GET'])
-def get_tree():
+def get_jtree():
     file_name = generate_tree(tree)
     return render_template(f"{file_name}.html")
+
+
+@app.route("/jtree", methods=['GET'])
+def get_tree():
+    return jsonify(tree)
 
 
 @app.route("/node/register", methods=['POST'])
@@ -98,8 +103,8 @@ def node_down():
         del reporter_node[SONS][down_node_id]
 
     # remove the link from the down node
-    down_node = tree[down_node_id]
     if down_node_id in tree:
+        down_node = tree[down_node_id]
         if is_reporter_father and is_son_for_node(down_node, reporter_node_id):
             del down_node[SONS][reporter_node_id]
         elif not is_reporter_father and is_father_for_node(down_node, reporter_node_id):
@@ -144,12 +149,12 @@ def root_manager(conn, address, server_port):
                 continue
             rootConnection = True
             root_id = f'{address[0]}:{port}'
-            temp_tree = create_node(root_id, f'{get_host_address()}:{server_port}')
-            if len(tree) > 0:
-                if root_id in tree:
-                    tree[root_id][FATHER] = temp_tree[root_id][FATHER]
+            if root_id in tree:
+                tree[root_id][FATHER] = supervisor_id
+            else:
+                temp_tree = create_node(root_id, supervisor_id)
                 temp_tree.update(tree)
-            tree = temp_tree
+                tree = temp_tree
             conn.sendall(build_command(Command.RESULT, 'OK'))
             print(f'root connected!: {address}. Root id: {root_id}')
         except Exception as e:
@@ -159,8 +164,8 @@ def root_manager(conn, address, server_port):
         data = conn.recv(1024)
         if not data:
             print(f'root connection closed!')
-            for son in tree[root_id][SONS]:
-                remove_father(tree[son])
+            # for son in tree[root_id][SONS]:
+            #     remove_father(tree[son])
             remove_node(tree, root_id)
             rootConnection = False
         else:
@@ -178,7 +183,7 @@ def root_connection_manager(server_port):
         if not rootConnection:
             Thread(target=root_manager, args=(conn, address, server_port)).start()
         else:
-            conn.sendall(build_command(Command.RESULT, 'ERROR'))
+            conn.sendall(build_command(Command.RESULT, 'ERROR - Root already in tree.'))
 
 
 if __name__ == '__main__':

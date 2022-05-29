@@ -31,7 +31,7 @@ if __name__ == "__main__":
     threads = []
     for _ in range(broker_number):
         threads.append(Thread(target=starter, args=(len(threads),)))
-        threads[len(threads) - 1].start()
-        time.sleep(0.5)
+        threads[len(threads)-1].start()
+        time.sleep(1)
     # prompt = myPrompt(int(broker_number))
     # prompt.cmdloop()
