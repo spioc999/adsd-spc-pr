@@ -44,7 +44,7 @@ def register_node():
         father_id = supervisor_id
     elif is_node_in_tree(node_id):
         # remove son from father
-        old_father = remove_father_from_node_if_present(node_id)
+        old_father = remove_node_from_father_if_present(node_id)
         # search new father
         father_id = search_father_and_add_as_son(node_id, supervisor_id, old_father)
     else:
@@ -74,36 +74,32 @@ def confirm_node():
 @app.route("/node/down", methods=['POST'])
 def node_down():
     reporter_node_id, down_node_id = get_down_node_info(request.json)
-    if reporter_node_id not in tree_TO_CHANGE:
+    if is_node_in_tree(reporter_node_id):
         raise Exception('Bad request', 400)
 
-    reporter_node = tree_TO_CHANGE[reporter_node_id]
-    is_father_for_reporter = is_father_for_node(reporter_node, down_node_id)
-    if not is_father_for_reporter and not is_son_for_node(reporter_node, down_node_id):
+    # down_node must be father or son
+    down_node_is_father = is_father_for_node(reporter_node_id, down_node_id)
+    down_node_is_son = is_son_of(reporter_node_id, down_node_id)
+
+    if not down_node_is_father and not down_node_is_son:
         raise Exception(f"Relationship not found between nodes: {reporter_node_id} - {down_node_id}", 404)
-    if is_father_for_reporter and is_son_for_node(reporter_node, down_node_id):
-        raise Exception(
-            f"Double Relationship found between nodes: {reporter_node_id} - {down_node_id}. Needs more investigation",
-            500)
+    if down_node_is_father and down_node_is_son:
+        raise Exception(f"Double Relationship found between nodes: {reporter_node_id} - {down_node_id}. Needs more investigation", 500)
 
     # remove link from the reporter
-    if is_father_for_reporter:
-        reporter_node[FATHER] = None
+    if down_node_is_son:
+        remove_son(reporter_node_id, down_node_id)
     else:
-        del reporter_node[SONS][down_node_id]
-        reporter_node[IS_FULL] = False
+        remove_father(reporter_node_id)
 
     # remove the link from the down node
-    if down_node_id in tree_TO_CHANGE:
-        down_node = tree_TO_CHANGE[down_node_id]
-        if is_father_for_reporter and is_son_for_node(down_node, reporter_node_id):
-            del down_node[SONS][reporter_node_id]
-            down_node[IS_FULL] = False
-        elif not is_father_for_reporter and is_father_for_node(down_node, reporter_node_id):
-            down_node[FATHER] = None
-
+    if is_node_in_tree(down_node_id):
+        if down_node_is_son:
+            remove_father(down_node_id)
+        elif down_node_is_father:
+            remove_son(down_node_id, reporter_node_id)
         # if the down node has not active connections then remove it from tree_TO_CHANGE structure
-        if down_node[FATHER] is None and len(down_node[SONS]) == 0:
+        if is_alone(down_node_id):
             remove_node(tree_TO_CHANGE, down_node_id)
     return "Success", 200
 

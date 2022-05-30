@@ -25,10 +25,6 @@ def get_down_node_info(json):
     raise Exception('Bad request', 400)
 
 
-def remove_father(node):
-    node[FATHER] = None
-
-
 def search_father_and_add_as_son(node_id, supervisor_id, father_to_exclude=None, unlimited_branch_size=False):
     if father_to_exclude and father_to_exclude == supervisor_id: # TODO: not clear check
         raise Exception("No available fathers", 409)  # http conflict
@@ -63,10 +59,3 @@ def supervisor_initialize_parser():
                         required=False,
                         default=FLASK_PORT)
     return parser.parse_args()
-
-
-def is_father_for_node(node, father_id):
-    return node[FATHER] == father_id
-
-
-

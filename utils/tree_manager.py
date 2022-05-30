@@ -44,6 +44,17 @@ def is_son_of(father_id, son_id) -> bool:
     return is_son
 
 
+def is_father_for_node(node_id, father_id) -> bool:
+    __treeLock.acquire()
+    if node_id in __tree:
+        is_father = __tree[node_id][FATHER] == father_id
+    else:
+        __treeLock.release()
+        raise RuntimeError(f"Node with id: {node_id} not found", 404)
+    __treeLock.release()
+    return is_father
+
+
 def get_node_status(father_id, node_id) -> Status:
     __treeLock.acquire()
     if father_id in __tree and node_id in __tree[father_id][SONS]:
@@ -55,13 +66,13 @@ def get_node_status(father_id, node_id) -> Status:
     return status
 
 
-def remove_father_from_node_if_present(node_id) -> str:
+def remove_node_from_father_if_present(node_id) -> str:
     __treeLock.acquire()
     if node_id in __tree:
         father_id = __tree[node_id][FATHER]
         if father_id in __tree:
             del __tree[father_id][SONS][node_id]
-            __tree[FATHER][IS_FULL] = len(__tree[FATHER][SONS]) >= TREE_BRANCH_SIZE
+            __tree[father_id][IS_FULL] = len(__tree[father_id][SONS]) >= TREE_BRANCH_SIZE
     else:
         __treeLock.release()
         raise RuntimeError(f"Node with id: {node_id} not found", 404)
@@ -142,6 +153,49 @@ def remove_sons_if_needed(node_id) -> None:
         __treeLock.release()
         raise RuntimeError(f"Node with id: {node_id} not found", 404)
     __treeLock.release()
+
+
+def remove_son(node_id, son_id) -> None:
+    __treeLock.acquire()
+    if node_id in __tree:
+        if son_id in __tree[node_id][SONS]:
+            del __tree[node_id][SONS][son_id]
+            __tree[node_id][IS_FULL] = len(__tree[node_id][SONS]) >= TREE_BRANCH_SIZE
+    else:
+        __treeLock.release()
+        raise RuntimeError(f"Node with id: {node_id} not found.", 404)
+    __treeLock.release()
+
+
+def remove_father(node_id) -> None:
+    __treeLock.acquire()
+    if node_id in __tree:
+        __tree[node_id][FATHER] = None
+    else:
+        __treeLock.release()
+        raise RuntimeError(f"Node with id: {node_id} not found.", 404)
+    __treeLock.release()
+
+
+def remove_node(node_id) -> None:
+    __treeLock.acquire()
+    if node_id in __tree:
+        del __tree[node_id]
+    else:
+        __treeLock.release()
+        raise RuntimeError(f"Node with id: {node_id} not found.", 404)
+    __treeLock.release()
+
+
+def is_alone(node_id) -> bool:
+    __treeLock.acquire()
+    if node_id in __tree:
+        alone = __tree[node_id][FATHER] is None and len(__tree[node_id][SONS]) == 0
+    else:
+        __treeLock.release()
+        raise RuntimeError(f"Node with id: {node_id} not found.", 404)
+    __treeLock.release()
+    return alone
 
 
 def create_node(node_id, father_id) -> dict:
