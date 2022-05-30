@@ -40,11 +40,9 @@ def get_jtree():
 def register_node():
     node_ip, node_port = get_register_node_info(request.json)
     node_id = get_node_id(node_ip, node_port)
-    if not rootConnection:  # No root tree_TO_CHANGE is present
-        # sent enums tcp server socket to root
+    if not rootConnection:  # No root tree is present
         father_id = supervisor_id
     elif is_node_in_tree(node_id):
-        # get father id
         # remove son from father
         old_father = remove_father_from_node_if_present(node_id)
         # search new father
@@ -57,27 +55,19 @@ def register_node():
 @app.route("/node/confirm", methods=['POST'])
 def confirm_node():
     father_node_ip, father_node_port, son_node_ip, son_node_port = get_confirm_node_info(request.json)
-    father_node_id = f'{father_node_ip}:{father_node_port}'
-    son_node_id = f'{son_node_ip}:{son_node_port}'
-    if father_node_id not in tree_TO_CHANGE:
+    father_id = get_node_id(father_node_ip, father_node_port)
+    son_id = get_node_id(son_node_ip, son_node_port)
+    if not is_node_in_tree(father_id):
         raise Exception("Father node not found", 12163)  # 12163 http disconnected, father must reconnect to network
 
-    father_node = tree_TO_CHANGE[father_node_id]
-    if son_node_id not in father_node[SONS]:
+    if not is_son_of(father_id, son_id):
         raise Exception('Son not found', 404)
 
-    son_dict_item = father_node[SONS][son_node_id]
-    if son_dict_item[STATUS] == Status.CONFIRMED:
+    if get_node_status(father_id, son_id) == Status.CONFIRMED:
         return 'Already confirmed', 200
 
-    son_dict_item[STATUS] = Status.CONFIRMED
-    son_dict_item[TIME] = datetime.now()
-    if son_node_id in tree_TO_CHANGE:
-        tree_TO_CHANGE[son_node_id][FATHER] = father_node_id
-    else:
-        new_node = create_node(son_node_id, father_node_id)
-        tree_TO_CHANGE.update(new_node)
-    remove_sons_if_needed(father_node)
+    confirm_son_and_add_as_node(father_id, son_id)
+    remove_sons_if_needed(father_id)
     return 'Success', 200
 
 

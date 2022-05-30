@@ -40,34 +40,10 @@ def search_father_and_add_as_son(node_id, supervisor_id, father_to_exclude=None,
     return search_father_and_add_as_son(node_id, supervisor_id, father_to_exclude=father_to_exclude, unlimited_branch_size=True)  # If not available father extend branch size
 
 
-def remove_sons_if_needed(node):
-    confirmed_sons = dict()
-    sons = node[SONS]
-    for son in sons:
-        if sons[son][STATUS] == Status.CONFIRMED:
-            confirmed_sons[son] = sons[son]
-
-    if len(confirmed_sons) > TREE_BRANCH_SIZE:
-        raise RuntimeError("Too much sons for node ")
-
-    if len(confirmed_sons) == TREE_BRANCH_SIZE:
-        node[SONS] = confirmed_sons
-        node[IS_FULL] = True
-        print(f"Dropping exceeded sons for node")
 
 
-def create_node(node_id, father_id):
-    return {
-            node_id: {
-                FATHER: father_id,
-                SONS: dict(),
-                IS_FULL: False
-            }
-        }
 
 
-def remove_node(tree, node_id):
-    del tree[node_id]
 
 
 def supervisor_initialize_parser():
@@ -92,8 +68,5 @@ def supervisor_initialize_parser():
 def is_father_for_node(node, father_id):
     return node[FATHER] == father_id
 
-
-def is_son_for_node(node, son_id):
-    return son_id in node[SONS]
 
 
