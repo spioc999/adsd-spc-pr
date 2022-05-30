@@ -109,7 +109,7 @@ def get_available_broker():
 
 
 def root_manager(conn, address):
-    global rootConnection, tree_TO_CHANGE, root_id
+    global rootConnection, root_id
     while not rootConnection:
         print("Waiting root node port")
         conn.sendall(build_command(Command.RESULT, 'OK'))
@@ -124,13 +124,11 @@ def root_manager(conn, address):
                 print(f"Error decoding port command and value")
                 continue
             rootConnection = True
-            root_id = f'{address[0]}:{port}'
-            if root_id in tree_TO_CHANGE:
-                tree_TO_CHANGE[root_id][FATHER] = supervisor_id
+            root_id = get_node_id(address[0],port)
+            if is_node_in_tree(root_id):
+                add_father(root_id, supervisor_id)
             else:
-                temp_tree_TO_CHANGE = create_node(root_id, supervisor_id)
-                temp_tree_TO_CHANGE.update(tree_TO_CHANGE)
-                tree_TO_CHANGE = temp_tree_TO_CHANGE
+                add_root_node(root_id, supervisor_id)
             conn.sendall(build_command(Command.RESULT, 'OK'))
             print(f'root connected!: {address}. Root id: {root_id}')
         except Exception as e:
@@ -140,12 +138,9 @@ def root_manager(conn, address):
         data = conn.recv(1024)
         if not data:
             print(f'root connection closed!')
-            # for son in tree_TO_CHANGE[root_id][SONS]:
-            #     remove_father(tree_TO_CHANGE[son])
-            # remove_node(tree_TO_CHANGE, root_id)
-            tree_TO_CHANGE[root_id][FATHER] = None
-            if len(tree_TO_CHANGE) == 1:
-                del tree_TO_CHANGE[root_id]
+            remove_father(root_id)
+            if len(get_tree()) == 1:
+                remove_node(root_id)
             rootConnection = False
         else:
             print(data)

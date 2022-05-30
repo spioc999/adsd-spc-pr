@@ -13,7 +13,7 @@ __last_used_broker_lock = Lock()
 def get_tree() -> dict:
     """
     Get tree
-    :return: a copy of the tree in order to avoid changing values outside of this manager
+    :return: a copy of the tree in order to avoid changing values outside this manager
     """
     __treeLock.acquire()
     copy = __tree.copy()
@@ -118,6 +118,16 @@ def add_son(father_id, son_id, unlimited_branch_size=False) -> None:
     __treeLock.release()
 
 
+def add_father(node_id, father_id) -> None:
+    __treeLock.acquire()
+    if node_id in __tree:
+        __tree[node_id][FATHER] = father_id
+    else:
+        __treeLock.release()
+        raise RuntimeError(f"Node with id: {node_id} not found", 404)
+    __treeLock.release()
+
+
 def confirm_son_and_add_as_node(father_id, son_id) -> None:
     __treeLock.acquire()
     if father_id in __tree and son_id in __tree[father_id][SONS]:
@@ -200,7 +210,7 @@ def is_alone(node_id) -> bool:
     return alone
 
 
-def get_next_broker():
+def get_next_broker() -> str:
     global __last_used_broker
     __treeLock.acquire()
     node_ids = list(n_id for n_id in __tree if __tree[n_id][FATHER])
@@ -217,6 +227,15 @@ def get_next_broker():
     __last_used_broker_lock.release()
 
     return broker_id
+
+
+def add_root_node(root_id, supervisor_id) -> None:
+    global __tree
+    root_node = create_node(root_id, supervisor_id)
+    __treeLock.acquire()
+    root_node.update(__tree)
+    __tree = root_node
+    __treeLock.release()
 
 
 def create_node(node_id, father_id) -> dict:
