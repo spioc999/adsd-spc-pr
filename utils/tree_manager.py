@@ -6,6 +6,7 @@ from datetime import datetime
 
 __tree = dict()
 __treeLock = Lock()
+__last_broker = 0
 
 
 def get_tree() -> dict:

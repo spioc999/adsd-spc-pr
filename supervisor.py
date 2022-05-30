@@ -100,7 +100,7 @@ def node_down():
             remove_son(down_node_id, reporter_node_id)
         # if the down node has not active connections then remove it from tree_TO_CHANGE structure
         if is_alone(down_node_id):
-            remove_node(tree_TO_CHANGE, down_node_id)
+            remove_node(down_node_id)
     return "Success", 200
 
 
