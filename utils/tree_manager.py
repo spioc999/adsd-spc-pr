@@ -1,5 +1,5 @@
 from threading import Lock
-from constants import *
+from utils.constants import *
 from enums.son_status import Status
 from datetime import datetime
 
@@ -131,7 +131,7 @@ def add_father(node_id, father_id) -> None:
 def confirm_son_and_add_as_node(father_id, son_id) -> None:
     __treeLock.acquire()
     if father_id in __tree and son_id in __tree[father_id][SONS]:
-        son = __tree[father_id][SONS]
+        son = __tree[father_id][SONS][son_id]
         son[STATUS] = Status.CONFIRMED
         son[TIME] = datetime.now()
         if son_id in __tree:
@@ -158,8 +158,8 @@ def remove_sons_if_needed(node_id) -> None:
             raise RuntimeError("Too much sons for node", 403)  # forbidden
 
         if len(confirmed_sons) == TREE_BRANCH_SIZE:
-            __tree[FATHER][SONS] = confirmed_sons
-            __tree[FATHER][IS_FULL] = True
+            __tree[node_id][SONS] = confirmed_sons
+            __tree[node_id][IS_FULL] = True
             print(f"Dropping exceeded sons for node {node_id}")
     else:
         __treeLock.release()
@@ -237,6 +237,9 @@ def add_root_node(root_id, supervisor_id) -> None:
     __tree = root_node
     __treeLock.release()
 
+
+def is_target_node_under_node(node_id, target_node_id):
+    pass
 
 def create_node(node_id, father_id) -> dict:
     return {

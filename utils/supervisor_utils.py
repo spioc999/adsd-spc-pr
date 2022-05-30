@@ -38,10 +38,6 @@ def search_father_and_add_as_son(node_id, supervisor_id, father_to_exclude=None,
 
 
 
-
-
-
-
 def supervisor_initialize_parser():
     """Utility method that initializes argparse and return the args
         @rtype: Namespace object

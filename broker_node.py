@@ -71,6 +71,7 @@ def connect_to_broker_network(start_tcp_server=False):
 
     while not father_connection or not father_ip or not father_port:
         status_code, father_ip, father_port, father_connection = register_current_node_and_connect_to_father()
+        print(f"Received status code: {status_code}")
         if status_code == 409:
             port = random.randint(LOWER_AVAILABLE_PORT, UPPER_AVAILABLE_PORT)  # if ip and port already in tree
             print(f"port changed to: {port}")
@@ -106,7 +107,9 @@ def register_current_node_and_connect_to_father():
                 if command == Command.RESULT and value == 'OK':
                     return response.status_code, ip_father, port_father, father_socket
         except Exception as e:
-            print(e)
+            print(f"Exception in register: {e}")
+            if e == '[Errno 61] Connection refused':
+                raise RuntimeError("Connection Refused - Killing process")
 
     return response.status_code, None, None, None
 

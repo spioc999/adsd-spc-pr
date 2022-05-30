@@ -12,10 +12,12 @@ TCPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
 rootConnection = False
 supervisor_id = None
 root_id = None
+root_connection_lock = Lock()
 
 
 @app.errorhandler(Exception)
 def handle_exceptions(exc):
+    print(f"Raised exception: {exc}")
     if not exc.args or len(exc.args) < 2:
         return 'Error', 500
 
@@ -48,6 +50,7 @@ def register_node():
         father_id = search_father_and_add_as_son(node_id, supervisor_id, old_father)
     else:
         father_id = search_father_and_add_as_son(node_id, supervisor_id)
+    print(f"Next father of {node_id} : {father_id}")
     return father_id, 200
 
 
@@ -73,7 +76,7 @@ def confirm_node():
 @app.route("/node/down", methods=['POST'])
 def node_down():
     reporter_node_id, down_node_id = get_down_node_info(request.json)
-    if is_node_in_tree(reporter_node_id):
+    if not is_node_in_tree(reporter_node_id):
         raise Exception('Bad request', 400)
 
     # down_node must be father or son
@@ -123,14 +126,18 @@ def root_manager(conn, address):
                 conn.sendall(build_command(Command.RESULT, 'ERROR'))
                 print(f"Error decoding port command and value")
                 continue
-            rootConnection = True
-            root_id = get_node_id(address[0],port)
+            if not get_root_connection_value():
+                set_root_connection_value(True)
+            else:
+                conn.sendall(build_command(Command.RESULT, 'ERROR - Root already in tree.'))
+                raise RuntimeError("Root leadership conflict", 500)
+            root_id = get_node_id(address[0], port)
             if is_node_in_tree(root_id):
                 add_father(root_id, supervisor_id)
             else:
                 add_root_node(root_id, supervisor_id)
             conn.sendall(build_command(Command.RESULT, 'OK'))
-            print(f'root connected!: {address}. Root id: {root_id}')
+            print(f'root connected!: {address}. Root id: {root_id}\n')
         except Exception as e:
             print(f'From {address}: {data}. {e}')
 
@@ -139,30 +146,48 @@ def root_manager(conn, address):
         if not data:
             print(f'root connection closed!')
             remove_father(root_id)
-            if len(get_tree()) == 1:
+            if len(get_tree()) == 1 or is_alone(root_id):
                 remove_node(root_id)
-            rootConnection = False
+            set_root_connection_value(False)
         else:
             print(data)
 
 
 def root_connection_manager(server_port):
-    global TCPServerSocket
-    TCPServerSocket.bind(('0.0.0.0', server_port))
+    global TCPServerSocket, supervisor_id
+    try:
+        TCPServerSocket.bind(('0.0.0.0', server_port))
+    except OSError as error:
+        print(f"Error {error}")
+        server_port += 1
+    supervisor_id = get_node_id(get_host_address(), tcp_server_port)
     print(f"Supervisor socket listening on port: {server_port}")
     while True:
-        print('waiting for new root...')
         TCPServerSocket.listen()
         conn, address = TCPServerSocket.accept()
-        if not rootConnection:
+        if not get_root_connection_value():
+            print('A new root is trying to connect')
             Thread(target=root_manager, args=(conn, address)).start()
         else:
-            conn.sendall(build_command(Command.RESULT, 'ERROR - Root already in tree_TO_CHANGE.'))
+            conn.sendall(build_command(Command.RESULT, 'ERROR - Root already in tree.'))
+
+
+def set_root_connection_value(value):
+    global rootConnection
+    root_connection_lock.acquire()
+    rootConnection = value
+    root_connection_lock.release()
+
+
+def get_root_connection_value():
+    root_connection_lock.acquire()
+    current_value = rootConnection
+    root_connection_lock.release()
+    return current_value
 
 
 if __name__ == '__main__':
     args = supervisor_initialize_parser()
     tcp_server_port = args.socket_port
-    supervisor_id = f'{get_host_address()}:{tcp_server_port}'
     Thread(target=root_connection_manager, args=(tcp_server_port,)).start()
     app.run(port=args.flask_port, host='0.0.0.0')
