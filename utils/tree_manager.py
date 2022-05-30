@@ -6,7 +6,8 @@ from datetime import datetime
 
 __tree = dict()
 __treeLock = Lock()
-__last_broker = 0
+__last_used_broker = 0
+__last_used_broker_lock = Lock()
 
 
 def get_tree() -> dict:
@@ -197,6 +198,25 @@ def is_alone(node_id) -> bool:
         raise RuntimeError(f"Node with id: {node_id} not found.", 404)
     __treeLock.release()
     return alone
+
+
+def get_next_broker():
+    global __last_used_broker
+    __treeLock.acquire()
+    node_ids = list(n_id for n_id in __tree if __tree[n_id][FATHER])
+    __treeLock.release()
+
+    if len(node_ids) == 0:
+        raise Exception("No available broker!", 404)
+
+    __last_used_broker_lock.acquire()
+    if __last_used_broker >= len(node_ids):
+        __last_used_broker = 0
+    broker_id = node_ids[__last_used_broker]
+    __last_used_broker += 1
+    __last_used_broker_lock.release()
+
+    return broker_id
 
 
 def create_node(node_id, father_id) -> dict:

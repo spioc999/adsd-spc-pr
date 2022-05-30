@@ -10,7 +10,6 @@ app = Flask(__name__)
 app.config['JSON_SORT_KEYS'] = False
 TCPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
 rootConnection = False
-index_last_broker_sent = 0
 supervisor_id = None
 root_id = None
 
@@ -106,17 +105,7 @@ def node_down():
 
 @app.route("/broker", methods=['GET'])
 def get_available_broker():
-    global index_last_broker_sent
-    node_ids = list(n_id for n_id in tree_TO_CHANGE if tree_TO_CHANGE[n_id][FATHER])
-    if len(node_ids) == 0:
-        raise Exception("No available broker!", 404)
-
-    if index_last_broker_sent >= len(node_ids):
-        index_last_broker_sent = 0
-
-    broker_id = node_ids[index_last_broker_sent]
-    index_last_broker_sent += 1
-    return broker_id, 200
+    return get_next_broker(), 200
 
 
 def root_manager(conn, address):
