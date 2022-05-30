@@ -5,19 +5,21 @@ from threading import Thread, Lock
 import json
 
 def decodeCommand(message, stato):
-    regexCOMMAND = r"^\[([A-Z]+)\]"
-    regexJSON = r"(\{[\"a-zA-Z0-9\,\ \:\"\]\[]+\})"
+    #regexCOMMAND = r"^\[([A-Z]+)\]"
+    #regexJSON = r"(?<o>{((?<s>\"([^\0-\x1F\"\\]|\\[\"\\\/bfnrt]|\\u[0-9a-fA-F]{4})*\"):(?<v>\g<s>|(?<n>-?(0|[1-9]\d*)(.\d+)?([eE][+-]?\d+)?)|\g<o>|\g<a>|true|false|null))?\s*((?<c>,\s*)\g<s>(?<d>:\s*)\g<v>)*})|(?<a>\[\g<v>?(\g<c>\g<v>)*\])"
 
     withArgs = {"SUBSCRIBE", "UNSUBSCRIBE", "SEND"}
 
-    command = re.findall(regexCOMMAND, message)[0]
+    message = message[1:]
+    split_message = message.split(']')
+    command = split_message[0]
     comando = None
 
     if command:
         comando = dict()
         comando['azione'] = command
         if command in withArgs and stato == "CONNESSO":
-            stringa = re.findall(regexJSON, message)[0]
+            stringa = split_message[1]
             parametri = json.loads(stringa)
             comando['parametri'] = parametri
 

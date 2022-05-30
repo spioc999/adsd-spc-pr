@@ -24,3 +24,12 @@ IS_BROKER = 'is_broker'
 IS_FATHER = 'is_father'
 IP = 'ip'
 PORT = 'port'
+USERNAME = 'username'
+
+
+# Socket messages
+UUID = 'uuid'
+TYPE = 'type'
+MESSAGE = 'message'
+TOPIC = 'topic'
+TIMESTAMP = 'timestamp'

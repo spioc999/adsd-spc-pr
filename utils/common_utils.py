@@ -1,3 +1,5 @@
+import json
+
 from netifaces import interfaces, ifaddresses, AF_INET
 import re
 from enums.Command import Command
@@ -27,11 +29,12 @@ def get_command_and_value(message):
         split_message = message.split(']')
         command = Command[split_message[0]]
         value = split_message[1].strip()
-        if re.compile(command).match(value):
-            return command, command.cast_value(value)
+        if command:
+            value_casted = command.validate_and_return_casted_value(value)
+            if value_casted:
+                return command, value_casted
     raise ValueError("Not valid message.")
 
 
 def build_command(command, value):
     return f'[{command.name}] {value}'.encode('UTF-8')
-
