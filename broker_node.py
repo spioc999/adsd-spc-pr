@@ -73,6 +73,7 @@ def connect_to_broker_network(start_tcp_server=False):
         status_code, father_ip, father_port, father_connection = register_current_node_and_connect_to_father()
         if status_code == 409:
             port = random.randint(LOWER_AVAILABLE_PORT, UPPER_AVAILABLE_PORT)  # if ip and port already in tree
+            print(f"port changed to: {port}")
 
     if start_tcp_server:
         # start server tcp

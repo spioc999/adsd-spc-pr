@@ -1,6 +1,6 @@
 from flask import Flask, request, render_template, jsonify
 import socket
-from threading import Thread
+from threading import Thread, Lock
 from utils.common_utils import *
 from utils.supervisor_utils import *
 from utils.html_generator import generate_tree
@@ -12,6 +12,10 @@ tree = dict()
 rootConnection = False
 index_last_broker_sent = 0
 supervisor_id = None
+root_id = None
+
+register_lock = Lock()
+confirm_lock = Lock()
 
 
 @app.errorhandler(Exception)
@@ -23,19 +27,21 @@ def handle_exceptions(exc):
 
 
 @app.route("/tree", methods=['GET'])
-def get_jtree():
-    file_name = generate_tree(tree)
+def get_tree():
+    file_name = generate_tree(tree, root_id)
     return render_template(f"{file_name}.html")
 
 
 @app.route("/jtree", methods=['GET'])
-def get_tree():
-    return jsonify(tree)
+def get_jtree():
+    tree_info = {len(tree): tree}
+    return jsonify(tree_info)
 
 
 @app.route("/node/register", methods=['POST'])
 def register_node():
     node_ip, node_port = get_register_node_info(request.json)
+    register_lock.acquire()
     node_id = f'{node_ip}:{node_port}'
     if not rootConnection:  # No root tree is present
         # sent enums tcp server socket to root
@@ -48,9 +54,10 @@ def register_node():
             remove_son(tree[current_father_id], node_id)
         # search new father
         father_id = search_father_and_add_as_son(tree, node_id, supervisor_id, current_father_id)
-        tree[node_id][FATHER] = None
+        # tree[node_id][FATHER] = None
     else:
         father_id = search_father_and_add_as_son(tree, node_id, supervisor_id)
+    register_lock.release()
     return father_id, 200
 
 
@@ -88,26 +95,28 @@ def node_down():
         raise Exception('Bad request', 400)
 
     reporter_node = tree[reporter_node_id]
-    is_reporter_father = is_father_for_node(reporter_node, down_node_id)
-    if not is_reporter_father and not is_son_for_node(reporter_node, down_node_id):
+    is_father_for_reporter = is_father_for_node(reporter_node, down_node_id)
+    if not is_father_for_reporter and not is_son_for_node(reporter_node, down_node_id):
         raise Exception(f"Relationship not found between nodes: {reporter_node_id} - {down_node_id}", 404)
-    if is_reporter_father and is_son_for_node(reporter_node, down_node_id):
+    if is_father_for_reporter and is_son_for_node(reporter_node, down_node_id):
         raise Exception(
             f"Double Relationship found between nodes: {reporter_node_id} - {down_node_id}. Needs more investigation",
             500)
 
     # remove link from the reporter
-    if is_reporter_father:
+    if is_father_for_reporter:
         reporter_node[FATHER] = None
     else:
         del reporter_node[SONS][down_node_id]
+        reporter_node[IS_FULL] = False
 
     # remove the link from the down node
     if down_node_id in tree:
         down_node = tree[down_node_id]
-        if is_reporter_father and is_son_for_node(down_node, reporter_node_id):
+        if is_father_for_reporter and is_son_for_node(down_node, reporter_node_id):
             del down_node[SONS][reporter_node_id]
-        elif not is_reporter_father and is_father_for_node(down_node, reporter_node_id):
+            down_node[IS_FULL] = False
+        elif not is_father_for_reporter and is_father_for_node(down_node, reporter_node_id):
             down_node[FATHER] = None
 
         # if the down node has not active connections then remove it from tree structure
@@ -131,9 +140,8 @@ def get_available_broker():
     return broker_id, 200
 
 
-def root_manager(conn, address, server_port):
-    global rootConnection, tree
-    root_id = None
+def root_manager(conn, address):
+    global rootConnection, tree, root_id
     while not rootConnection:
         print("Waiting root node port")
         conn.sendall(build_command(Command.RESULT, 'OK'))
@@ -166,7 +174,10 @@ def root_manager(conn, address, server_port):
             print(f'root connection closed!')
             # for son in tree[root_id][SONS]:
             #     remove_father(tree[son])
-            remove_node(tree, root_id)
+            # remove_node(tree, root_id)
+            tree[root_id][FATHER] = None
+            if len(tree) == 1:
+                del tree[root_id]
             rootConnection = False
         else:
             print(data)
@@ -181,7 +192,7 @@ def root_connection_manager(server_port):
         TCPServerSocket.listen()
         conn, address = TCPServerSocket.accept()
         if not rootConnection:
-            Thread(target=root_manager, args=(conn, address, server_port)).start()
+            Thread(target=root_manager, args=(conn, address)).start()
         else:
             conn.sendall(build_command(Command.RESULT, 'ERROR - Root already in tree.'))
 

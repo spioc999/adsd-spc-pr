@@ -2,6 +2,7 @@ import argparse
 from datetime import datetime
 from enums.son_status import Status
 from utils.constants import *
+from supervisor import register_lock
 
 
 def get_register_node_info(json):
@@ -49,6 +50,7 @@ def remove_father(node):
 
 def search_father_and_add_as_son(tree, node_id, supervisor_id, father_to_exclude=None, unlimited_branch_size=False):
     if father_to_exclude and father_to_exclude == supervisor_id:
+        register_lock.release()
         raise Exception("No available fathers", 409)  # http conflict
 
     for node in tree:
