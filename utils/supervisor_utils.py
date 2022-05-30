@@ -1,8 +1,5 @@
 import argparse
-from datetime import datetime
-from enums.son_status import Status
-from utils.constants import *
-from supervisor import register_lock
+from utils.tree_manager import *
 
 
 def get_register_node_info(json):
@@ -28,37 +25,19 @@ def get_down_node_info(json):
     raise Exception('Bad request', 400)
 
 
-def add_son(node, son_id, unlimited_branch_size=False):
-    if unlimited_branch_size or len(node[SONS]) <= TREE_BRANCH_SIZE:
-        node[SONS][son_id] = dict()
-        node[SONS][son_id][STATUS] = Status.PENDING
-        node[SONS][son_id][TIME] = datetime.now()
-    else:
-        raise RuntimeError(f"Too much sons for node with id:")
-
-
-def remove_son(node, son_id):
-    if son_id in node[SONS]:
-        if node[IS_FULL]:
-            node[IS_FULL] = False
-        del node[SONS][son_id]
-
-
 def remove_father(node):
     node[FATHER] = None
 
 
-def search_father_and_add_as_son(tree, node_id, supervisor_id, father_to_exclude=None, unlimited_branch_size=False):
-    if father_to_exclude and father_to_exclude == supervisor_id:
-        register_lock.release()
+def search_father_and_add_as_son(node_id, supervisor_id, father_to_exclude=None, unlimited_branch_size=False):
+    if father_to_exclude and father_to_exclude == supervisor_id: # TODO: not clear check
         raise Exception("No available fathers", 409)  # http conflict
 
-    for node in tree:
-        if node != father_to_exclude and node != node_id and (unlimited_branch_size or len(tree[node][SONS]) < TREE_BRANCH_SIZE) and not tree[node][IS_FULL] and tree[node][FATHER]:
-            father_id = node
-            add_son(tree[node], node_id, unlimited_branch_size)
-            return father_id
-    return search_father_and_add_as_son(tree, node_id, supervisor_id, father_to_exclude=father_to_exclude, unlimited_branch_size=True)  # If not available father extend branch size
+    for node in get_tree():
+        if node != father_to_exclude and node != node_id and (unlimited_branch_size or not is_full(node)) and has_father(node):
+            add_son(node, node_id, unlimited_branch_size)
+            return node
+    return search_father_and_add_as_son(node_id, supervisor_id, father_to_exclude=father_to_exclude, unlimited_branch_size=True)  # If not available father extend branch size
 
 
 def remove_sons_if_needed(node):

@@ -35,3 +35,6 @@ def get_command_and_value(message):
 def build_command(command, value):
     return f'[{command.name}] {value}'.encode('UTF-8')
 
+
+def get_node_id(node_ip, node_port):
+    return f'{node_ip}:{node_port}'
