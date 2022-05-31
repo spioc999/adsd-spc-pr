@@ -281,7 +281,7 @@ def handle_command_send(send_dict, connection_id):
     if TOPIC in send_dict and MESSAGE in send_dict:
         message = send_dict[MESSAGE]
         topic = send_dict[TOPIC]
-        if not is_broker and topic not in topics:
+        if topic not in topics:
             conn.sendall(create_socket_message(MessageResponseType.ERROR_SEND,
                                                uuid_message, message=f'Topic ({topic}) invalid!'))
             return
