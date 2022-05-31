@@ -131,7 +131,7 @@ def handle_command_port(port_value, connection_id, current_node_ip, current_node
 
         if response.status_code != 200:
             conn.sendall(build_command(Command.RESULT, 'ERROR'))
-            print(f'Error during confirm broker {ip_node}:{port_value}!')
+            print(f'I\'m {get_node_id(current_node_ip, current_node_port)} Error during confirm broker {ip_node}:{port_value}!')
         else:
             update_info_connection(connection_id, is_broker=True, port=port_value)
             conn.sendall(build_command(Command.RESULT, 'OK'))

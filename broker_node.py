@@ -27,7 +27,7 @@ def connection_manager_thread(connection_id):
     while not connection_lost:
         data = conn.recv(1024)
         if not data:
-            should_reconnect = handle_active_connection_lost(connection_id, f'{host_address}:{port}')
+            should_reconnect = handle_active_connection_lost(connection_id, get_node_id(host_address, port))
             connection_lost = True
             if should_reconnect:
                 connect_to_broker_network()

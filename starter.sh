@@ -13,6 +13,7 @@ do
   broker_pid=$!
   echo $broker_pid
   pids+=( $broker_pid )
+  sleep 1
 done
 
 #for i in pids
