@@ -13,12 +13,20 @@ rootConnection = False
 supervisor_id = None
 root_id = None
 root_connection_lock = Lock()
+conflict_resolver = Lock()
 
 
 @app.errorhandler(Exception)
 def handle_exceptions(exc):
     print(f"Raised exception: {exc}")
     if not exc.args or len(exc.args) < 2:
+        if conflict_resolver.locked():
+            conflict_resolver.release()
+        if root_connection_lock.locked():
+            root_connection_lock.release()
+        release_locks()
+        print("[GENERIC ERROR] Safely released all locks.")
+        print("Exception type: " + type(exc).__name__)
         return 'Error', 500
 
     return exc.args[0], exc.args[1]
@@ -50,7 +58,7 @@ def register_node():
         father_id = search_father_and_add_as_son(node_id, supervisor_id, old_father)
     else:
         father_id = search_father_and_add_as_son(node_id, supervisor_id)
-    print(f"Next father of {node_id} : {father_id}")
+    print(f"[REGISTER] Next father of {node_id} -> {father_id}")
     return father_id, 200
 
 
@@ -63,13 +71,14 @@ def confirm_node():
         raise Exception("Father node not found", 12163)  # 12163 http disconnected, father must reconnect to network
 
     if not is_son_of(father_id, son_id):
-        raise Exception('Son not found', 404)
+        raise Exception('Son not found', 404) # Father must refuse son connection
 
     if get_node_status(father_id, son_id) == Status.CONFIRMED:
         return 'Already confirmed', 200
 
     confirm_son_and_add_as_node(father_id, son_id)
     remove_sons_if_needed(father_id)
+    print(f"[CONFIRM] - {son_id} connected to {father_id}")
     return 'Success', 200
 
 
@@ -112,13 +121,14 @@ def get_available_broker():
 
 
 def root_manager(conn, address):
-    global rootConnection, root_id
+    global rootConnection, root_id, conflict_resolver
     while not rootConnection:
         print("Waiting root node port")
         conn.sendall(build_command(Command.RESULT, 'OK'))
         data = conn.recv(1024)
         if not data:
             print(f'root connection closed before confirmed!')
+            conflict_resolver.release()
             break
         try:
             command, port = get_command_and_value(data)
@@ -126,12 +136,8 @@ def root_manager(conn, address):
                 conn.sendall(build_command(Command.RESULT, 'ERROR'))
                 print(f"Error decoding port command and value")
                 continue
-            if not get_root_connection_value():
-                set_root_connection_value(True)
-            else:
-                conn.sendall(build_command(Command.RESULT, 'ERROR - Root already in tree.'))
-                raise RuntimeError("Root leadership conflict", 500)
             root_id = get_node_id(address[0], port)
+            set_root_connection_value(True)
             if is_node_in_tree(root_id):
                 add_father(root_id, supervisor_id)
             else:
@@ -149,23 +155,31 @@ def root_manager(conn, address):
             if len(get_tree()) == 1 or is_alone(root_id):
                 remove_node(root_id)
             set_root_connection_value(False)
+            conn.close()
+            conflict_resolver.release()
         else:
+            if not conflict_resolver.locked():
+                conflict_resolver.acquire()
             print(data)
 
 
 def root_connection_manager(server_port):
-    global TCPServerSocket, supervisor_id
-    try:
-        TCPServerSocket.bind(('0.0.0.0', server_port))
-    except OSError as error:
-        print(f"Error {error}")
-        server_port += 1
-    supervisor_id = get_node_id(get_host_address(), tcp_server_port)
+    global TCPServerSocket, supervisor_id, conflict_resolver
+    server_ok = False
+    while not server_ok:
+        try:
+            TCPServerSocket.bind(('0.0.0.0', server_port))
+            server_ok = True
+        except OSError as error:
+            print(f"Error {error}")
+            server_port += 1
+    supervisor_id = get_node_id(get_host_address(), server_port)
     print(f"Supervisor socket listening on port: {server_port}")
     while True:
         TCPServerSocket.listen()
         conn, address = TCPServerSocket.accept()
-        if not get_root_connection_value():
+        if not conflict_resolver.locked():
+            conflict_resolver.acquire()
             print('A new root is trying to connect')
             Thread(target=root_manager, args=(conn, address)).start()
         else:

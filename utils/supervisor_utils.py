@@ -29,13 +29,13 @@ def search_father_and_add_as_son(node_id, supervisor_id, father_to_exclude=None,
     if father_to_exclude and father_to_exclude == supervisor_id: # TODO: not clear check
         raise Exception("No available fathers", 409)  # http conflict
 
-    for node in get_tree():
-        if node != father_to_exclude and node != node_id and (unlimited_branch_size or not is_full(node)) and has_father(node):
-            add_son(node, node_id, unlimited_branch_size)
-            return node
+    for tree_node_id in get_tree():
+        if tree_node_id != father_to_exclude and tree_node_id != node_id and (unlimited_branch_size or not is_full(tree_node_id)) and has_father(tree_node_id):
+            error, is_sub_node = is_target_a_sub_node(node_id, tree_node_id, supervisor_id)
+            if not error and not is_sub_node:
+                add_son(tree_node_id, node_id, unlimited_branch_size)
+                return tree_node_id
     return search_father_and_add_as_son(node_id, supervisor_id, father_to_exclude=father_to_exclude, unlimited_branch_size=True)  # If not available father extend branch size
-
-
 
 
 def supervisor_initialize_parser():

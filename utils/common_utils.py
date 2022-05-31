@@ -29,7 +29,7 @@ def get_command_and_value(message):
         value = split_message[1].strip()
         if re.compile(command).match(value):
             return command, command.cast_value(value)
-    raise ValueError("Not valid message.")
+    raise ValueError("Not valid message.", 403)
 
 
 def build_command(command, value):

@@ -10,6 +10,13 @@ __last_used_broker = 0
 __last_used_broker_lock = Lock()
 
 
+def release_locks():
+    if __treeLock.locked():
+        __treeLock.release()
+    if __last_used_broker_lock.locked():
+        __last_used_broker_lock.release()
+
+
 def get_tree() -> dict:
     """
     Get tree
@@ -238,8 +245,30 @@ def add_root_node(root_id, supervisor_id) -> None:
     __treeLock.release()
 
 
-def is_target_node_under_node(node_id, target_node_id):
-    pass
+def is_target_a_sub_node(node_id, target_node_id, supervisor_id):
+    is_sub_node = False
+    error = False
+    __treeLock.acquire()
+    if target_node_id in __tree:
+        current_target_id = target_node_id
+        while True:
+            target_father_id = __tree[current_target_id][FATHER]
+            if target_father_id == node_id:
+                is_sub_node = True
+                print(f"[RELATION-SEARCH] -> Found relationship between node: {node_id} and sub-node: {target_node_id}")
+                break
+            elif target_father_id == supervisor_id:  # reached end of the tree
+                break
+            elif not target_father_id:
+                error = True
+                break
+            current_target_id = target_father_id
+    else:
+        __treeLock.release()
+        raise RuntimeError(f"Node with id: {node_id} or {target_node_id} not found.", 404)
+    __treeLock.release()
+    return error, is_sub_node
+
 
 def create_node(node_id, father_id) -> dict:
     return {

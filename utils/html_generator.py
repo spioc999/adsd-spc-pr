@@ -26,7 +26,7 @@ def delete_file():
 
 
 def get_html_node_structure(tree, node_id, status=''):
-    status_html = f'<br/>{status}' if len(status) > 0 else ''
+    status_html = f'<br/>{status}'
     tree_structure_html = NODE_HTML_OPEN + '<a>' + f'{node_id}{status_html}' + '</a>'
     if node_id in tree:
         if len(tree[node_id][SONS]) > 0:

@@ -34,7 +34,15 @@ def connection_manager_thread(connection_id):
         else:
             command, value = get_command_and_value(data)
             if command == Command.PORT:
-                handle_command_port(value, connection_id, host_address, port)
+                status_code = handle_command_port(value, connection_id, host_address, port)
+                if status_code != 200:
+                    print(f"Closing connection with {connection_id}")
+                    conn.close()
+                    delete_active_connection(connection_id)
+                    connection_lost = True
+                    if status_code == 12163:
+                        print(f"Status code = {status_code}. Reconnecting to network")
+                        connect_to_broker_network()
             else:
                 print(data.decode('UTF-8')) #TODO handle the other ones
 
@@ -106,10 +114,9 @@ def register_current_node_and_connect_to_father():
                 command, value = get_command_and_value(father_socket.recv(1024))
                 if command == Command.RESULT and value == 'OK':
                     return response.status_code, ip_father, port_father, father_socket
-        except Exception as e:
-            print(f"Exception in register: {e}")
-            if e == '[Errno 61] Connection refused':
-                raise RuntimeError("Connection Refused - Killing process")
+        except Exception as exc:
+            father_socket.close()
+            print(f"Exception  in register: {exc}")
 
     return response.status_code, None, None, None
 
