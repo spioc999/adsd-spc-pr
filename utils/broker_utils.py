@@ -205,7 +205,8 @@ def handle_command_port(port_value, connection_id, current_node_ip, current_node
             print(f'Broker {ip_node}:{port_value} confirmed successfully!')
 
 
-def create_socket_message(message_type, uuid=None, message=None, username=None, timestamp=None, topic=None, encode=True):
+def create_socket_message(message_type, uuid=None, message=None, username=None, timestamp=None, topic=None,
+                          encode=True):
     dict_to_send = dict()
     dict_to_send[TYPE] = message_type.name
     if message:
@@ -221,7 +222,7 @@ def create_socket_message(message_type, uuid=None, message=None, username=None, 
     json_string = json.dumps(dict_to_send)
     if encode:
         return json_string.encode('UTF-8')
-    return json.dumps(dict_to_send)
+    return json_string
 
 
 def handle_command_user(username_dict, connection_id):
@@ -296,8 +297,11 @@ def handle_command_send(send_dict, connection_id):
             username = send_dict[USERNAME]
 
         send_message(connection_id, message, topic, timestamp, username)
-        conn.sendall(create_socket_message(MessageResponseType.OK_SEND, uuid_message,
-                                           message=f'\"{message}\" sent to topic:{topic}!'))
+        if not is_broker:
+            conn.sendall(create_socket_message(MessageResponseType.OK_SEND, uuid_message,
+                                               message=f'\"{message}\" sent to topic:{topic}!'))
+        else:
+            conn.sendall(build_command(Command.RESULT, 'OK message forwarded'))
     else:
         conn.sendall(create_socket_message(MessageResponseType.ERROR_SEND,
                                            uuid_message, message='topic and message mandatory!'))
