@@ -281,14 +281,15 @@ def handle_command_send(send_dict, connection_id):
     if TOPIC in send_dict and MESSAGE in send_dict:
         message = send_dict[MESSAGE]
         topic = send_dict[TOPIC]
-        if topic not in topics:
-            conn.sendall(create_socket_message(MessageResponseType.ERROR_SEND,
-                                               uuid_message, message=f'Topic ({topic}) invalid!'))
-            return
-        elif not is_broker and connection_id not in topics[topic]:
-            conn.sendall(create_socket_message(MessageResponseType.ERROR_SEND,
-                                               uuid_message, message=f'Not subscribed to {topic}!'))
-            return
+        if not is_broker:
+            if topic not in topics:
+                conn.sendall(create_socket_message(MessageResponseType.ERROR_SEND,
+                                                   uuid_message, message=f'Topic ({topic}) invalid!'))
+                return
+            elif connection_id not in topics[topic]:
+                conn.sendall(create_socket_message(MessageResponseType.ERROR_SEND,
+                                                   uuid_message, message=f'Not subscribed to {topic}!'))
+                return
 
         timestamp = None
         if TIMESTAMP in send_dict:
