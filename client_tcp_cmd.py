@@ -7,7 +7,7 @@ from utils.common_utils import *
 SUPERVISOR_ENDPOINT = 'http://127.0.0.1:10000'
 
 
-class ClientSpcPr(Cmd):
+class ClientTcpCmd(Cmd):
     prompt = '>'
     intro = 'Welcome on client. Make sure SUPERVISOR is up!\nTo start connection invoke "get_broker_and_connect"...'
 
@@ -89,5 +89,5 @@ class ClientSpcPr(Cmd):
 
 
 if __name__ == '__main__':
-    prompt = ClientSpcPr()
+    prompt = ClientTcpCmd()
     prompt.cmdloop()
