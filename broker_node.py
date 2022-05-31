@@ -32,19 +32,31 @@ def connection_manager_thread(connection_id):
             if should_reconnect:
                 connect_to_broker_network()
         else:
-            command, value = get_command_and_value(data)
-            if command == Command.PORT:
-                status_code = handle_command_port(value, connection_id, host_address, port)
-                if status_code != 200:
-                    print(f"Closing connection with {connection_id}")
-                    conn.close()
-                    delete_active_connection(connection_id)
-                    connection_lost = True
-                    if status_code == 12163:
-                        print(f"Status code = {status_code}. Reconnecting to network")
-                        connect_to_broker_network()
-            else:
-                print(data.decode('UTF-8')) #TODO handle the other ones
+            try:
+                command, value = get_command_and_value(data)
+                if command == Command.PORT:
+                    status_code = handle_command_port(value, connection_id, host_address, port)
+                    if status_code != 200:
+                        print(f"Closing connection with {connection_id}")
+                        conn.close()
+                        delete_active_connection(connection_id)
+                        connection_lost = True
+                        if status_code == 12163:
+                            print(f"Status code = {status_code}. Reconnecting to network")
+                            connect_to_broker_network()
+                elif command == Command.USER:
+                    handle_command_user(value, connection_id)
+                elif command == Command.SUBSCRIBE:
+                    handle_command_subscribe(value, connection_id)
+                elif command == Command.UNSUBSCRIBE:
+                    handle_command_unsubscribe(value, connection_id)
+                elif command == Command.SEND:
+                    handle_command_send(value, connection_id)
+                else:
+                    print(data.decode('UTF-8'))
+            except Exception as e:
+                print(e)
+                conn.sendall(build_command(Command.RESULT, 'ERROR'))
 
 
 def broker_tcp_server_manager():
@@ -107,8 +119,7 @@ def register_current_node_and_connect_to_father():
             ip_father, port_father = ip_port_father[0], int(ip_port_father[1])
             father_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
             father_socket.connect((ip_father, port_father))
-            data = father_socket.recv(1024)
-            command, value = get_command_and_value(data)
+            command, value = get_command_and_value(father_socket.recv(1024))
             if command == Command.RESULT and value == "OK":
                 father_socket.sendall(build_command(Command.PORT, port))
                 command, value = get_command_and_value(father_socket.recv(1024))

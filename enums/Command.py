@@ -1,12 +1,26 @@
-from enum import Enum
+import json
+from enum import Enum, auto
+import re
 
 
-class Command(str, Enum):
-    PORT = "([1-9]{1})([0-9]{3,})"
-    RESULT = "[A-Z]+"
+class Command(Enum):
+    PORT = auto()
+    RESULT = auto()
+    SEND = auto()
+    SUBSCRIBE = auto()
+    UNSUBSCRIBE = auto()
+    USER = auto()
 
-    def cast_value(self, value_to_cast):
-        if self.name == Command.PORT.name:
-            return int(value_to_cast)
-        else:  # in case of str value
-            return value_to_cast
+    def validate_and_return_casted_value(self, value_to_cast):
+        try:
+            if self == Command.PORT:
+                if re.compile("([1-9])([0-9]{3,})").match(value_to_cast):
+                    return int(value_to_cast)
+            elif self == Command.RESULT:
+                if re.compile("[A-Z]+").match(value_to_cast):
+                    return value_to_cast
+            else:
+                return json.loads(value_to_cast)
+        except Exception as e:
+            print(e)
+        return None
