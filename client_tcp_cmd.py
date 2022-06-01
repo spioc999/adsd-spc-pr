@@ -25,7 +25,7 @@ def _build_double_json(key1, value1, key2, value2):
 class ClientTcpCmd(Cmd):
     prompt = '>'
     intro = '\n\nWelcome on client. Make sure SUPERVISOR is up!\n' \
-            'To start connection invoke - get_broker_and_connect\n' \
+            'To start connection invoke - connect\n' \
             'Documentation is available typing <help>\n\n'
 
     def __init__(self):
@@ -33,11 +33,15 @@ class ClientTcpCmd(Cmd):
         self.socket = None
         self.is_connect = False
         self.topics = []
+        self.listening_thread = None
 
-    def do_get_broker_and_connect(self, inp):
+    def do_connect(self, inp):
         """
         No input needed, this command get the first available broker and try to connect to it
         """
+        if self.is_connect:
+            print("Already connected.")
+            return
         response = requests.get(f'{SUPERVISOR_ENDPOINT}/broker')
         if response.status_code != 200:
             print(response.text)
@@ -51,10 +55,12 @@ class ClientTcpCmd(Cmd):
                 self.socket.connect((address, port))
                 self.is_connect = True
                 print(f'[CONNECTED] -> Broker: {response.text}\n')
-                Thread(target=self._receive_messages, args=(self.socket,)).start()
+                self.listening_thread = Thread(target=self._receive_messages, args=(self.socket,))
+                self.listening_thread.start()
             except Exception as e:
                 self.socket = None
                 self.is_connect = False
+                self.topics = []
                 print(f'[ERROR] -> Connection failed: {e}')
 
     def do_exit(self, inp):
@@ -71,8 +77,13 @@ class ClientTcpCmd(Cmd):
         Disconnect from broker
         """
         if self.is_connect and self.socket:
+            print("[INFO] -> closing listening thread")
+            self.listening_thread.stop()
+            print("[INFO] -> closing tcp connection")
             self.socket.close()
             self.is_connect = False
+            self.topics = []
+            print("[INFO] All done. Ready for new connections.")
 
     def do_set_username(self, username):
         """
@@ -82,19 +93,21 @@ class ClientTcpCmd(Cmd):
         if username:
             self._send_message_to_socket_safely(build_command(Command.USER, _build_json(USERNAME, username)))
 
-    def do_send_message(self, inp):
+    def do_send(self, inp):
         """
-        Send the given message
-        :param message: the message that should be sent
+        Type the send command and follow screen instructions
         """
-        print("Available topics: ")
+        if len(self.topics) == 0:
+            print("No topics available")
+            return
+        print("\n\nAvailable topics: ")
         self.do_topics(None)
         topic = None
         while topic not in self.topics:
-            topic = input("In which topic do you want to send the message?\n")
+            topic = input("\nIn which topic do you want to send the message?\n")
             if not topic in self.topics:
                 print("Invalid topic. Retry!\n")
-        message = input("Message:")
+        message = input("Message: ")
         if message and topic:
             self._send_message_to_socket_safely(build_command(Command.SEND, _build_double_json(MESSAGE, message, TOPIC, topic)))
         else:
@@ -120,6 +133,9 @@ class ClientTcpCmd(Cmd):
         """
         Return the list of subscribed topics
         """
+        if len(self.topics) == 0:
+            print("No topics available")
+            return
         for topic in self.topics:
             print(topic)
 
@@ -140,6 +156,7 @@ class ClientTcpCmd(Cmd):
             except Exception as e:
                 print(f"[ERROR] -> Listening on messages\nException: {e}")
                 self.is_connect = False
+                self.topics = []
 
     def _send_message_to_socket_safely(self, message, topic=None):
         try:

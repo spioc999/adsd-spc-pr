@@ -103,13 +103,32 @@ def add_subscription(connection_id, topic):
     mutexTOPICs.release()
 
 
+def remove_subscritions(connection_id):
+    global topics
+    global mutexTOPICs
+    mutexTOPICs.acquire()
+    for topic in topics:
+        if connection_id in topics[topic]:
+            topics[topic].remove(connection_id)
+            print(f"{connection_id} removed from topic: {topic}")
+            if len(topics[topic]) == 0:
+                del topics[topic]
+        else:
+            print(f"{connection_id} not in topic: {topic}")
+    mutexTOPICs.release()
+
+
 def remove_subscription(connection_id, topic):
     global topics
     global mutexTOPICs
     mutexTOPICs.acquire()
-    topics[topic].remove(connection_id)
-    if len(topics[topic]) == 0:
-        del topics[topic]
+    if connection_id in topics[topic]:
+        topics[topic].remove(connection_id)
+        print(f"{connection_id} removed from topic: {topic}")
+        if len(topics[topic]) == 0:
+            del topics[topic]
+    else:
+        print(f"{connection_id} not in topic: {topic}")
     mutexTOPICs.release()
 
 
@@ -158,6 +177,7 @@ def handle_active_connection_lost(connection_id, current_node_id):
     if not is_broker:
         print(f'client connection lost: {connection_id}!')
         delete_active_connection(connection_id)
+        remove_subscritions(connection_id)
         return False
 
     # broker connection handling
