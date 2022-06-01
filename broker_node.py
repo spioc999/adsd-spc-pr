@@ -10,17 +10,11 @@ pid = None
 
 
 def connection_manager_thread(connection_id):
-    # What should be do here
-    # 1. Wait for messages
-    # 2. after a message received decode command and value
-    # and manage it in order to let brokers communicate to each other
-    #    2.1 Receive a message and redirect it to all connections except the connection active in this thread
-    # 3. if connection is closed manage it as follow:
-    # if client: do nothing
-    # if a son node -> call the service supervisor.sonDown
-    # if a father node -> call the service supervisor.fatherDown and then reconnect to network #
-    # (During this phase we should save messages received in order to
-    # redirect them on the network when connection is esthabilished?)
+    """
+    This service waits for messages from connection, after received manage it in order to communicate with brokers and clients
+    :param connection_id: the connection which the broker is waiting for messages
+    :return: None
+    """
     print(f"Started connection manager for {connection_id}...")
     conn = get_connection_by_id(connection_id)
     connection_lost = False
@@ -84,6 +78,11 @@ def broker_tcp_server_manager():
 
 
 def connect_to_broker_network(start_tcp_server=False):
+    """
+    This service connect the current broker to the network in order to communicate with other brokers
+    :param start_tcp_server: variable that defines if this service must start a tcp server (for client connections) or not.
+    :return: None
+    """
     global port
     father_connection = None
     father_ip = None
@@ -92,7 +91,7 @@ def connect_to_broker_network(start_tcp_server=False):
     while not father_connection or not father_ip or not father_port:
         status_code, father_ip, father_port, father_connection = register_current_node_and_connect_to_father()
         print(f"Received status code: {status_code}")
-        if status_code == 409:
+        if status_code == 409:  # Port out of range, changing port
             port = random.randint(LOWER_AVAILABLE_PORT, UPPER_AVAILABLE_PORT)  # if ip and port already in tree
             print(f"port changed to: {port}")
 
@@ -107,6 +106,10 @@ def connect_to_broker_network(start_tcp_server=False):
 
 
 def register_current_node_and_connect_to_father():
+    """
+    This service ask to the supervisor the father id and then try to establish a tcp connection with the given father
+    :return: response_status_code, father_ip, father_port, father_socket
+    """
     response = requests.post(f'{SUPERVISOR_ENDPOINT}/node/register', json={
         NODE_IP: host_address,
         NODE_PORT: port
@@ -121,7 +124,7 @@ def register_current_node_and_connect_to_father():
             father_socket.connect((ip_father, port_father))
             command, value = get_command_and_value(father_socket.recv(1024))
             if command == Command.RESULT and value == "OK":
-                father_socket.sendall(build_command(Command.PORT, port))
+                father_socket.sendall(build_command(Command.PORT, port))  # Sending broker tcp port. The supervisor must know the tcp port of each broker
                 command, value = get_command_and_value(father_socket.recv(1024))
                 if command == Command.RESULT and value == 'OK':
                     return response.status_code, ip_father, port_father, father_socket
@@ -136,5 +139,5 @@ if __name__ == '__main__':
     args = broker_initialize_parser()
     port = args.socket_port
     host_address = get_host_address()
-    pid = os.getpid()
+    pid = os.getpid()  # get pid in order to kill arbitrary broker
     connect_to_broker_network(start_tcp_server=True)

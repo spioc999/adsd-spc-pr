@@ -1,6 +1,5 @@
 import argparse
 import copy
-import json
 from threading import Lock
 from utils.constants import *
 import requests
@@ -115,6 +114,10 @@ def remove_subscription(connection_id, topic):
 
 
 def send_message(connection_id, message, topic, timestamp, username):
+    """
+    This method get all connections that should receive this message.
+    Send message as it is to clients and add the [SEND] command to other brokers
+    """
     global topics
     global mutexTOPICs
     global activeConnections
@@ -137,7 +140,7 @@ def send_message(connection_id, message, topic, timestamp, username):
         message_json = create_socket_message(message_type=MessageResponseType.NEW_MESSAGE, message=message,
                                              topic=topic, timestamp=timestamp, username=username, encode=False)
         if is_broker:
-            conn.sendall(build_command(Command.SEND, message_json))
+            conn.sendall(build_command(Command.SEND, message_json))  # Broker need a command to redirect the message
         else:
             conn.sendall(message_json.encode('UTF-8'))
 
@@ -179,6 +182,9 @@ def handle_active_connection_lost(connection_id, current_node_id):
 
 
 def handle_command_port(port_value, connection_id, current_node_ip, current_node_port):
+    """
+    This method manage the [PORT] command received in tcp connection
+    """
     conn = get_connection_by_id(connection_id)
     if port_value < LOWER_AVAILABLE_PORT or port_value > UPPER_AVAILABLE_PORT:
         conn.sendall(build_command(Command.RESULT, 'ERROR'))
@@ -208,6 +214,9 @@ def handle_command_port(port_value, connection_id, current_node_ip, current_node
 
 def create_socket_message(message_type, uuid=None, message=None, username=None, timestamp=None, topic=None,
                           encode=True):
+    """
+    This method create the message that should be sent as json based on given parameters
+    """
     dict_to_send = dict()
     dict_to_send[TYPE] = message_type.name
     if message:
@@ -227,6 +236,9 @@ def create_socket_message(message_type, uuid=None, message=None, username=None, 
 
 
 def handle_command_user(username_dict, connection_id):
+    """
+    This method manage the [USER] command received in tcp connection
+    """
     conn = get_connection_by_id(connection_id)
     uuid_message = None
     if UUID in username_dict:
@@ -242,6 +254,9 @@ def handle_command_user(username_dict, connection_id):
 
 
 def handle_command_subscribe(subscribe_dict, connection_id):
+    """
+    This method manage the [SUBSCRIBE] command received in tcp connection
+    """
     conn = get_connection_by_id(connection_id)
     uuid_message = None
     if UUID in subscribe_dict:
@@ -257,6 +272,9 @@ def handle_command_subscribe(subscribe_dict, connection_id):
 
 
 def handle_command_unsubscribe(unsubscribe_dict, connection_id):
+    """
+    This method manage the [UNSUBSCRIBE] command received in tcp connection
+    """
     conn = get_connection_by_id(connection_id)
     uuid_message = None
     if UUID in unsubscribe_dict:
@@ -273,6 +291,9 @@ def handle_command_unsubscribe(unsubscribe_dict, connection_id):
 
 
 def handle_command_send(send_dict, connection_id):
+    """
+    This method manage the [SEND] command received in tcp connection
+    """
     conn, username, is_broker = get_connection_username_and_is_broker_by_id(connection_id)
     uuid_message = None
     if UUID in send_dict:
