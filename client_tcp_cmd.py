@@ -55,8 +55,7 @@ class ClientTcpCmd(Cmd):
                 self.socket.connect((address, port))
                 self.is_connect = True
                 print(f'[CONNECTED] -> Broker: {response.text}\n')
-                self.listening_thread = Thread(target=self._receive_messages, args=(self.socket,))
-                self.listening_thread.start()
+                self.listening_thread = Thread(target=self._receive_messages, args=(self.socket,)).start()
             except Exception as e:
                 self.socket = None
                 self.is_connect = False
@@ -77,15 +76,13 @@ class ClientTcpCmd(Cmd):
         Disconnect from broker
         """
         if self.is_connect and self.socket:
-            print("[INFO] -> closing listening thread")
-            self.listening_thread.stop()
             print("[INFO] -> closing tcp connection")
             self.socket.close()
             self.is_connect = False
             self.topics = []
             print("[INFO] All done. Ready for new connections.")
 
-    def do_set_username(self, username):
+    def do_username(self, username):
         """
         Set a username that will be used to identify message sender
         :param username: your username
@@ -154,9 +151,11 @@ class ClientTcpCmd(Cmd):
                 else:
                     print(f"[BROKER] {data.decode('UTF-8')}\n")
             except Exception as e:
-                print(f"[ERROR] -> Listening on messages\nException: {e}")
-                self.is_connect = False
-                self.topics = []
+                if e.args[0] == 9:
+                    self.is_connect = False
+                    self.topics = []
+                else:
+                    print(f"[ERROR] -> Listening on messages\nException: {e}")
 
     def _send_message_to_socket_safely(self, message, topic=None):
         try:
