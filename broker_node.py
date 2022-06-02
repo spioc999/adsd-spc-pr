@@ -11,7 +11,7 @@ pid = None
 
 def connection_manager_thread(connection_id):
     """
-    This service waits for messages from connection, after received manage it in order to communicate with brokers and clients
+    This service waits for messages from connection, after received the message manage it in order to communicate with brokers and clients
     :param connection_id: the connection which the broker is waiting for messages
     :return: None
     """
@@ -79,7 +79,7 @@ def broker_tcp_server_manager():
 
 def connect_to_broker_network(start_tcp_server=False):
     """
-    This service connect the current broker to the network in order to communicate with other brokers
+    This service connects the current broker to the network (thanks to supervisor) in order to communicate with other brokers
     :param start_tcp_server: variable that defines if this service must start a tcp server (for client connections) or not.
     :return: None
     """
@@ -107,7 +107,7 @@ def connect_to_broker_network(start_tcp_server=False):
 
 def register_current_node_and_connect_to_father():
     """
-    This service ask to the supervisor the father id and then try to establish a tcp connection with the given father
+    This service asks the supervisor the father id and then tries to establish a tcp connection with the given father
     :return: response_status_code, father_ip, father_port, father_socket
     """
     response = requests.post(f'{SUPERVISOR_ENDPOINT}/node/register', json={
