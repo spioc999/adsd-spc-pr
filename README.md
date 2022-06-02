@@ -4,7 +4,7 @@ Exam project for "Architetture dei Sistemi Distribuiti" university course @ UniC
 
 # Broker tree management
 
-Exam track chosen:
+Exam track chosen from https://github.com/vollero/asdsw2022/tree/main/elaborati:
 
 > Estendere il broker per permetterne un utilizzo distribuito. In particolare:
 > - la connessione tra i broker componenti deve essere ad albero
