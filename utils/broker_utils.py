@@ -103,7 +103,7 @@ def add_subscription(connection_id, topic):
     mutexTOPICs.release()
 
 
-def remove_subscritions(connection_id):
+def remove_subscriptions(connection_id):
     global topics
     global mutexTOPICs
     mutexTOPICs.acquire()
@@ -175,7 +175,7 @@ def handle_active_connection_lost(connection_id, current_node_id):
     if not is_broker:
         print(f'client connection lost: {connection_id}!')
         delete_active_connection(connection_id)
-        remove_subscritions(connection_id)
+        remove_subscriptions(connection_id)
         return False
 
     # broker connection handling
