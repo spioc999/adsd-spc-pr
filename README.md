@@ -30,17 +30,59 @@ Supervisor can be seen as tree root's father. The TCP connection is needed to ob
 Supervisor TCP server confirms only one connection at time.
 
 ## Broker
+The Broker (broker.py) ask to the supervisor his father id in order to connect to the network. After that it starts a tcp server in order to accept tcp connections from clients and from other brokers.
+When a broker receives a [SEND] command to a specific topic, it send the message to all the clients connected to him and also to other brokers in order to propagate the message in the network.  
 
 ## Clients
 The clients developed are able to communicate with supervisor that should be instantiating in the same machine with REST server listening on port 10000 (as is by default). They request for an available broker using the dedicated endpoint and send the right commands to brokers. 
 Two versions have been implemented:
+
 ### CMD
-//TODO
+The cmd client (client_tcp_cmd.py) is a useful cmd client that can be used to connect to the network and to send messages over the network.
+
 ### GUI
 The GUI version has been created using framework Flutter (which uses Dart as programming language).
 Link of repository (present also linux build on main folder): https://github.com/spioc999/adsd-spc-pr-client-gui
 
 # Installing and setup
+
+### Virtual Environment
+We suggest you to create a dedicated virtual environment before start the execution.
+If you don't want to create it then just skip this section.
+
+To create the virtual environment follow these steps:
+1. Go to the project's root directory
+2. Create a folder named venv
+3. Create the virtual environment with the following command:
+> python3 -m venv venv/
+
+4. Activate it running:
+> source venv/bin/activate
+
+### Installing dependencies
+To install all the needed dependencies you just need to run:
+> pip install requirements.txt
+
+N.B. Remember to activate your virtual environment if you have it.
+
+### Start supervisor
+To start the supervisor run:
+> python3 supervisor.py
+
+If you want to run it with a specific port then type:
+> python3 supervisor.py -sp \<port\>
+  
+### Start broker
+To start the broker type:
+> python3 broker.py
+
+If you want to run it with a specific port then type:
+> python3 broker.py -sp \<port\>
+
+If you have a linux-based os (like linux or macOs) and you also have a virtual enviroment, then you can use the "starter" script to run more than one broker at the same time.
+To do it just type:
+> ./starter.py
+
 
 
 
