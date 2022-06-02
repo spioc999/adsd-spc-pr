@@ -32,7 +32,13 @@ Supervisor TCP server confirms only one connection at time.
 ## Broker
 
 ## Clients
-
+The clients developed are able to communicate with supervisor that should be instantiating in the same machine with REST server listening on port 10000 (as is by default). They request for an available broker using the dedicated endpoint and send the right commands to brokers. 
+Two versions have been implemented:
+### CMD
+//TODO
+### GUI
+The GUI version has been created using framework Flutter (which uses Dart as programming language).
+Link of repository (present also linux build on main folder): https://github.com/spioc999/adsd-spc-pr-client-gui
 
 # Installing and setup
 
