@@ -111,8 +111,6 @@ def remove_subscritions(connection_id):
         if connection_id in topics[topic]:
             topics[topic].remove(connection_id)
             print(f"{connection_id} removed from topic: {topic}")
-            if len(topics[topic]) == 0:
-                del topics[topic]
         else:
             print(f"{connection_id} not in topic: {topic}")
     mutexTOPICs.release()
