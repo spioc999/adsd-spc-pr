@@ -18,6 +18,9 @@ conflict_resolver = Lock()
 
 @app.errorhandler(Exception)
 def handle_exceptions(exc):
+    """
+    This method catches all exceptions and, after release locks, it sends the error back to the client
+    """
     print(f"Raised exception: {exc}")
     if not exc.args or len(exc.args) < 2:
         if conflict_resolver.locked():
@@ -34,12 +37,18 @@ def handle_exceptions(exc):
 
 @app.route("/tree", methods=['GET'])
 def html_tree():
+    """
+    Generate a html page containing the tree structure
+    """
     file_name = generate_tree(get_tree(), root_id)
     return render_template(f"{file_name}.html")
 
 
 @app.route("/jtree", methods=['GET'])
 def get_jtree():
+    """
+    Return the tree structure as json
+    """
     tree = get_tree()
     tree_info = {len(tree): tree}
     return jsonify(tree_info)
@@ -47,6 +56,10 @@ def get_jtree():
 
 @app.route("/node/register", methods=['POST'])
 def register_node():
+    """
+    Register a new broker as a network node
+    :return father_id: <ip:port> of the broker that represents the requester father
+    """
     node_ip, node_port = get_register_node_info(request.json)
     node_id = get_node_id(node_ip, node_port)
     if not rootConnection:  # No root tree is present
@@ -64,6 +77,11 @@ def register_node():
 
 @app.route("/node/confirm", methods=['POST'])
 def confirm_node():
+    """
+    After a broker receives a connection from another broker, it confirms the new broker as its son to supervisor.
+    The confirm action let the supervisor create the new broker as a real node of the network.
+    From this moment the new node is available for receiving new brokers as sons.
+    """
     father_node_ip, father_node_port, son_node_ip, son_node_port = get_confirm_node_info(request.json)
     father_id = get_node_id(father_node_ip, father_node_port)
     son_id = get_node_id(son_node_ip, son_node_port)
@@ -84,6 +102,10 @@ def confirm_node():
 
 @app.route("/node/down", methods=['POST'])
 def node_down():
+    """
+    This service is used by brokers to communicate that another broker is down.
+    When all the neighbours of the spotted broker notifies him as down it is removed from the network.
+    """
     reporter_node_id, down_node_id = get_down_node_info(request.json)
     if not is_node_in_tree(reporter_node_id):
         raise Exception('Bad request', 400)
@@ -117,10 +139,18 @@ def node_down():
 
 @app.route("/broker", methods=['GET'])
 def get_available_broker():
+    """
+    This service is dedicated to clients that want to connect to the network.
+    :return: the first available broker_id.
+    """
     return get_next_broker(), 200
 
 
 def root_manager(conn, address):
+    """
+    After a broker establishes connection with the supervisor then the supervisor wait for [PORT] command in order to add
+    it as root of the network
+    """
     global rootConnection, root_id, conflict_resolver
     while not rootConnection:
         print("Waiting root node port")
@@ -164,6 +194,10 @@ def root_manager(conn, address):
 
 
 def root_connection_manager(server_port):
+    """
+    Supervisor waits for root tcp connection. If more than one connection received than just the first one will be
+    taken as a valid connection, other are refused.
+    """
     global TCPServerSocket, supervisor_id, conflict_resolver
     server_ok = False
     while not server_ok:
