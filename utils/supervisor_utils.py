@@ -26,7 +26,7 @@ def get_down_node_info(json):
 
 
 def search_father_and_add_as_son(node_id, supervisor_id, father_to_exclude=None, unlimited_branch_size=False):
-    if father_to_exclude and father_to_exclude == supervisor_id: # TODO: not clear check
+    if father_to_exclude and father_to_exclude == supervisor_id:  # TODO: not clear check
         raise Exception("No available fathers", 409)  # http conflict
 
     for tree_node_id in get_tree():

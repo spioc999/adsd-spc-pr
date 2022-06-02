@@ -79,7 +79,7 @@ def remove_node_from_father_if_present(node_id) -> str:
     __treeLock.acquire()
     if node_id in __tree:
         father_id = __tree[node_id][FATHER]
-        if father_id in __tree:
+        if father_id in __tree and node_id in __tree[father_id][SONS]:
             del __tree[father_id][SONS][node_id]
             __tree[father_id][IS_FULL] = len(__tree[father_id][SONS]) >= TREE_BRANCH_SIZE
     else:

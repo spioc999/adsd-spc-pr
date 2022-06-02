@@ -1,5 +1,6 @@
 import random
 import socket
+import sys
 from threading import Thread
 from utils.broker_utils import *
 import os
@@ -60,7 +61,11 @@ def broker_tcp_server_manager():
     :return: None
     """
     tcp_server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
-    tcp_server_socket.bind(('0.0.0.0', port))
+    try:
+        tcp_server_socket.bind(('0.0.0.0', port))
+    except OSError as osError:
+        print("Received osError. QUIT")
+        sys.exit()
     print('Broker UP (port: {} - PID: {})'.format(port, pid))
     try:
         while True:
@@ -131,6 +136,9 @@ def register_current_node_and_connect_to_father():
         except Exception as exc:
             father_socket.close()
             print(f"Exception  in register: {exc}")
+            if 'Connection refused' in exc.args[1]:
+                print("Connection refused obtained")
+                sys.exit()
 
     return response.status_code, None, None, None
 
