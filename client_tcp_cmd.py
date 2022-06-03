@@ -37,7 +37,8 @@ class ClientTcpCmd(Cmd):
 
     def do_connect(self, inp):
         """
-        No input needed, this command get the first available broker and try to connect to it
+        No input needed.
+        This command get the first available broker and try to connect to it
         """
         if self.is_connect:
             print("Already connected.")
@@ -64,6 +65,7 @@ class ClientTcpCmd(Cmd):
 
     def do_exit(self, inp):
         """
+        No input needed.
         Disconnect from broker and close console
         """
         self.do_disconnect(None)
@@ -73,7 +75,8 @@ class ClientTcpCmd(Cmd):
 
     def do_disconnect(self, inp):
         """
-        Disconnect from broker
+        No input needed.
+        Disconnect from broker.
         """
         if self.is_connect and self.socket:
             print("[INFO] -> closing tcp connection")
@@ -85,13 +88,14 @@ class ClientTcpCmd(Cmd):
     def do_username(self, username):
         """
         Set a username that will be used to identify message sender
-        :param username: your username
+        :param username -> your username
         """
         if username:
             self._send_message_to_socket_safely(build_command(Command.USER, _build_json(USERNAME, username)))
 
     def do_send(self, inp):
         """
+        No input needed.
         Type the send command and follow screen instructions
         """
         if len(self.topics) == 0:
@@ -113,6 +117,7 @@ class ClientTcpCmd(Cmd):
     def do_subscribe(self, topic):
         """
         Subscribe current user to specified topic
+        :param: topic -> Topic name
         """
         if topic:
             self._send_message_to_socket_safely(build_command(Command.SUBSCRIBE, _build_json(TOPIC, topic)), topic=topic)
@@ -120,6 +125,7 @@ class ClientTcpCmd(Cmd):
     def do_unsubscribe(self, topic):
         """
         Unsubscribe from specified topic
+        :param: topic -> topic name
         """
         if topic:
             if topic in self.topics:
@@ -128,6 +134,7 @@ class ClientTcpCmd(Cmd):
 
     def do_topics(self, inp):
         """
+        No input needed.
         Return the list of subscribed topics
         """
         if len(self.topics) == 0:
