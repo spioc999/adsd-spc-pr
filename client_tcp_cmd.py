@@ -6,7 +6,8 @@ import requests
 from utils.common_utils import *
 from utils.constants import *
 
-SUPERVISOR_ENDPOINT = 'http://127.0.0.1:10000'
+HTTP_PREFIX = 'http://'
+SUPERVISOR_ENDPOINT = HTTP_PREFIX + '127.0.0.1:10000'
 
 
 def _build_json(key, value):
@@ -34,6 +35,30 @@ class ClientTcpCmd(Cmd):
         self.is_connect = False
         self.topics = []
         self.listening_thread = None
+        self.supervisor = SUPERVISOR_ENDPOINT
+
+
+    def do_defaultSupervisor(self, inp):
+        """
+        Restore default supervisor settings
+        """
+        self.supervisor = SUPERVISOR_ENDPOINT
+        print(f"Supervisor url restored to: {self.supervisor}")
+
+    def do_supervisor(self, inp):
+        """
+        You can use this method to declare supervisor ip and port
+        No input needed
+        """
+        supervisor_ip = input("Supervisor ip: ")
+        supervisor_port = input("Supervisor port: ")
+        try:
+            int(supervisor_port)
+        except:
+            print("Wrong port format, retry...")
+            return
+        self.supervisor = HTTP_PREFIX + supervisor_ip + ':' + supervisor_port
+        print(f"New supervisor: {self.supervisor}")
 
     def do_connect(self, inp):
         """
@@ -43,7 +68,7 @@ class ClientTcpCmd(Cmd):
         if self.is_connect:
             print("Already connected.")
             return
-        response = requests.get(f'{SUPERVISOR_ENDPOINT}/broker')
+        response = requests.get(f'{self.supervisor}/broker')
         if response.status_code != 200:
             print(response.text)
         else:
